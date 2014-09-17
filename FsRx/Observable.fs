@@ -87,9 +87,9 @@ module Observable =
     let amb second first = Observable.Amb(first, second)
 
 
-
     /// Binds an observable to generate a subsequent observable.
     let bind (f: 'T -> IObservable<'TNext>) (m: IObservable<'T>) = m.SelectMany(Func<_,_> f)
+
 
     /// Lifts the values of f and m and applies f to m, returning an IObservable of the result.
     let apply f m = f |> bind (fun f' -> m |> bind (fun m' -> Observable.Return(f' m')))
@@ -114,12 +114,12 @@ module Observable =
         |> Observable.scan 
             ( fun ( _ ,(l',r')) ( l,r ) ->
                 match l,r,l',r' with
-                | Some lv, None,    _,       Some rv -> Some(lv,rv), (l,  r')
-                | None,    Some rv, Some lv, _       -> Some(lv,rv), (l', r )
-                | Some _,  _,       _,       None    -> None       , (l,  r')
-                | _,       Some _,  None,    _       -> None       , (l', r )
-                | None,    None,    _,       _       -> None       , (l', r')
-                | Some _,  Some _,  _,       _ -> 
+                | Some lv, None   ,  _     , Some rv -> Some(lv,rv), (l,  r')
+                | None   , Some rv, Some lv,  _      -> Some(lv,rv), (l', r )
+                | Some _ ,  _     ,  _     , None    -> None       , (l,  r')
+                |  _     , Some _ , None   ,  _      -> None       , (l', r )
+                | None   , None   ,  _     ,  _      -> None       , (l', r')
+                | Some _ , Some _ ,  _     ,  _      -> 
                       invalidOp "Should not receive both left and right"
             ) (None, (None,None))
         |> Observable.choose fst
@@ -163,6 +163,10 @@ module Observable =
                 observer.OnError e
                 { new IDisposable with member this.Dispose() = () }
         }
+
+
+    let filter  (predicate:'T->bool) (source:IObservable<'T>) = 
+        Observable.Where( source, predicate )
 
 
     /// Folds the observable
@@ -296,7 +300,7 @@ module Observable =
     let reduce f source = Observable.Aggregate(source, Func<_,_,_> f)
 
 
-
+    
 
     let result x : IObservable<_>=
         { new IObservable<_> with
@@ -306,7 +310,7 @@ module Observable =
                 { new IDisposable with member this.Dispose() = () }
         }
 
-
+        
     /// Samples the observable at the given interval
     let sample (interval: TimeSpan) source =
         Observable.Sample(source, interval)
@@ -361,8 +365,8 @@ module Observable =
         Observable.And<'Left,'Right>(left, right )
 
 
-    let cast<'CastType> source =
-        Observable.Cast<'CastType>(source)
+//    let cast<'CastType> (source) =
+//        Observable.Cast<'CastType>(source)
 
 
     /// Produces an enumerable sequence of consequtive (possibly empty) chunks of the source observable
@@ -373,24 +377,28 @@ module Observable =
     let collect  newCollector merge source = 
         Observable.Collect(source, newCollector, merge )
 
-    
+    /// Returns an observable sequence containing a int64 that represents 
+    /// the total number of elements in an observable sequence 
     let longCount source = 
         Observable.LongCount(source)
 
 
-
+    /// Returns an observable sequence that only contains distinct elements 
     let distinct source = 
         Observable.Distinct(source)
 
 
-
+    /// Returns an observable sequence that only contains distinct contiguous elements 
     let distinctUntilChanged source = 
         Observable.DistinctUntilChanged(source)
 
 
+    /// Creates an array from an observable sequence
     let toArray  source = 
         Observable.ToArray(source)
 
+
+    /// Creates a list from an observable sequence
     let toList source = 
         Observable.ToList(source)
 
@@ -416,6 +424,7 @@ module Observable =
 //    let forEachAsync source = 
 //        Observable.ForEachAsync(source)
 
+    /// Returns a specified number of contiguous elements from the end of an obserable sequence
     let takeLast (count:int) source = 
         Observable.TakeLast(source, count)
 
@@ -423,13 +432,13 @@ module Observable =
         Observable.FirstAsync
 
     let generate initialstate condition iterator selector = 
-        Observable.Generate(initialstate, condition, iterator, selector )
+        Observable.Generate( initialstate, condition, iterator, selector )
 
     let latest source = 
-        Observable.Latest(source)
+        Observable.Latest( source )
 
     let materialize source = 
-        Observable.Materialize(source)
+        Observable.Materialize( source )
 
     let dematerialize source = 
         Observable.Dematerialize(source)
@@ -437,7 +446,7 @@ module Observable =
 
 ///---------TODO - IMPLEMENT THE 7 OVERLOADS
     let groupBy source keySelector = 
-        Observable.GroupBy(source, keySelector)
+        Observable.GroupBy( source, keySelector )
 
 //    let groupUntil source = 
 //        Observable.GroupByUntil(source)
@@ -447,6 +456,9 @@ module Observable =
 
     let maxOf (source:IObservable<'T>) = 
         Observable.Max( source )
+
+/// NEEED TO ADD FILTER
+
 
 //    let maxBy source = 
 //        Observable.MaxBy(source)
@@ -461,45 +473,57 @@ module Observable =
 //        Observable.Using(source)
 
     let joinWhen (plans:IEnumerable<Joins.Plan<'T>>) = 
-        Observable.When(plans)
+        Observable.When( plans )
 
+    /// Filters the observable elements of a sequence based on a predicate 
+    let where  (predicate:'T->bool) (source:IObservable<'T>) = 
+        Observable.Where( source, predicate )
 
-    let where (source:IObservable<'T>) (predicate:'T->bool)  = 
-        Observable.Where(source, predicate)
+    /// Filters the observable elements of a sequence based on a predicate by 
+    /// incorporating the element's index
+    let wherei (predicate:'T->int->bool) (source:IObservable<'T>)  = 
+        Observable.Where( source, predicate )
 
-
-    let wherei (source:IObservable<'T>) (predicate:'T->int->bool)  = 
-        Observable.Where(source, predicate)
 
     let interval period = 
-        Observable.Interval(period)
+        Observable.Interval( period )
+
 
     let next source = 
-        Observable.Next(source)
+        Observable.Next( source ) 
+
 
     let ofType source = 
-        Observable.OfType(source)
+        Observable.OfType( source )
+
 
     let onErrorResumeNext source = 
         Observable.OnErrorResumeNext
 
+
     let publish source = 
-        Observable.Publish(source)
+        Observable.Publish( source )
+
 
     let publishLast source = 
-        Observable.PublishLast(source)
+        Observable.PublishLast( source )
+
 
     let wait  source = 
-        Observable.Wait(source)
+        Observable.Wait( source )
+
 
     let thenSelect source = 
-        Observable.Then(source)
+        Observable.Then( source )
+
 
     let takeLastBuffer (count:int) source = 
-        Observable.TakeLastBuffer(source, count)
+        Observable.TakeLastBuffer( source, count )
 
 
-
+    /// Returns an enumerable sequence whose sequence whose enumeration returns the 
+    /// most recently observed element in the source observable sequence, using 
+    /// the specified 
     let mostRecent initialVal source = 
         Observable.MostRecent( source, initialVal )
 
@@ -516,15 +540,15 @@ module Observable =
 
 
     let startWith source param = 
-        Observable.StartWith(source, param)
+        Observable.StartWith( source, param )
 
 
     let pairwise (source:IObservable<'a>) : IObservable<'a*'a> = 
-        Observable.pairwise(source)
+        Observable.pairwise( source )
 
 
     let partition predicate t = 
-        Observable.partition( predicate t)
+        Observable.partition( predicate t )
 
 
 
