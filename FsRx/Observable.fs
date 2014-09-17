@@ -365,138 +365,170 @@ module Observable =
         Observable.Cast<'CastType>(source)
 
 
+    /// Produces an enumerable sequence of consequtive (possibly empty) chunks of the source observable
+    let chunkify<'Source> source : IEnumerable<IList<'Source>> = 
+        Observable.Chunkify<'Source>( source )
 
-    let chunkify source = 
-        Observable.Chunkify
 
     let collect  newCollector merge source = 
         Observable.Collect(source, newCollector, merge )
+
     
     let longCount source = 
-        Observable.LongCount
+        Observable.LongCount(source)
+
+
 
     let distinct source = 
-        Observable.Distinct
+        Observable.Distinct(source)
+
+
 
     let distinctUntilChanged source = 
-        Observable.DistinctUntilChanged
+        Observable.DistinctUntilChanged(source)
+
 
     let toArray  source = 
-        Observable.ToArray
+        Observable.ToArray(source)
 
     let toList source = 
-        Observable.ToList
+        Observable.ToList(source)
+
 
     let toEvent source = 
-        Observable.ToEvent
+        Observable.ToEvent(source)
 
-    let toAsync source = 
-        Observable.ToAsync
+//    let toAsync source = 
+//        Observable.ToAsync(source)
 
-    let toDictionary source = 
-        Observable.ToDictionary
+    let toDictionary keySelector source = 
+        Observable.ToDictionary(source, keySelector)
 
-    let toEnumerable source = 
-        Observable.ToEnumerable
 
-    let forEachAsync source = 
-        Observable.ForEachAsync
+    let toDictionaryComparer keySelector comparer source =
+        Observable.ToDictionary<'Source,'Key,'Element>( source, keySelector, comparer )
+    
 
-    let takeLast source = 
-        Observable.TakeLast
+    let toDictionaryElements (keySelector:'Source->'Key )(elementSelector:'Source->'Elm) (source:'Source) =
+        Observable.ToDictionary(source, keySelector, elementSelector)    
 
-    let firstAsync source = 
+
+//    let forEachAsync source = 
+//        Observable.ForEachAsync(source)
+
+    let takeLast (count:int) source = 
+        Observable.TakeLast(source, count)
+
+    let firstAsync  = 
         Observable.FirstAsync
 
-    let generate source = 
-        Observable.Generate
+    let generate initialstate condition iterator selector = 
+        Observable.Generate(initialstate, condition, iterator, selector )
 
     let latest source = 
-        Observable.Latest
+        Observable.Latest(source)
 
     let materialize source = 
-        Observable.Materialize
+        Observable.Materialize(source)
 
     let dematerialize source = 
-        Observable.Dematerialize
+        Observable.Dematerialize(source)
 
-    let groupBy source = 
-        Observable.GroupBy
 
-    let groupUntil source = 
-        Observable.GroupByUntil
+///---------TODO - IMPLEMENT THE 7 OVERLOADS
+    let groupBy source keySelector = 
+        Observable.GroupBy(source, keySelector)
+
+//    let groupUntil source = 
+//        Observable.GroupByUntil(source)
 
     let groupJoin source = 
         Observable.GroupJoin
 
-    let maxOf source = 
-        Observable.Max
+    let maxOf (source:IObservable<'T>) = 
+        Observable.Max( source )
 
-    let maxBy source = 
-        Observable.MaxBy
+//    let maxBy source = 
+//        Observable.MaxBy(source)
+//
+//    let minOf source = 
+//        Observable.Min(source)
+//
+//    let minBy source = 
+//        Observable.MinBy(source)
+//
+//    let using  source = 
+//        Observable.Using(source)
 
-    let minOf source = 
-        Observable.Min
+    let joinWhen (plans:IEnumerable<Joins.Plan<'T>>) = 
+        Observable.When(plans)
 
-    let minBy source = 
-        Observable.MinBy
 
-    let using  source = 
-        Observable.Using
+    let where (source:IObservable<'T>) (predicate:'T->bool)  = 
+        Observable.Where(source, predicate)
 
-    let  source = 
-        Observable.When
 
-    let  source = 
-        Observable.Where
+    let wherei (source:IObservable<'T>) (predicate:'T->int->bool)  = 
+        Observable.Where(source, predicate)
 
-    let  source = 
-        Observable.Interval
+    let interval period = 
+        Observable.Interval(period)
 
-    let  source = 
-        Observable.Next
+    let next source = 
+        Observable.Next(source)
 
-    let  source = 
-        Observable.OfType
+    let ofType source = 
+        Observable.OfType(source)
 
-    let  source = 
+    let onErrorResumeNext source = 
         Observable.OnErrorResumeNext
 
-    let  source = 
-        Observable.Publish
+    let publish source = 
+        Observable.Publish(source)
 
-    let  source = 
-        Observable.PublishLast
+    let publishLast source = 
+        Observable.PublishLast(source)
 
-    let  source = 
-        Observable.Wait
+    let wait  source = 
+        Observable.Wait(source)
 
-    let  source = 
-        Observable.Then
+    let thenSelect source = 
+        Observable.Then(source)
 
-    let  source = 
-        Observable.TakeLastBuffer
-
-    let  source = 
-        Observable.MostRecent
-
-    let  source = 
-        Observable.Synchronize
-
-    let  source = 
-        Observable.Switch
-
-    let  source = 
-        Observable.StartWith
-
-    let  source = 
-        Observable.pairwise
-
-    let  source = 
-        Observable.partition
+    let takeLastBuffer (count:int) source = 
+        Observable.TakeLastBuffer(source, count)
 
 
 
+    let mostRecent initialVal source = 
+        Observable.MostRecent( source, initialVal )
+
+
+    /// Synchronizes the observable sequence so that notifications cannot be delivered concurrently
+    /// this voerload is useful to "fix" and observable sequence that exhibits concurrent 
+    /// callbacks on individual observers, which is invalid behavior for the query processor
+    let synchronizeFix  source = 
+        Observable.Synchronize( source )
+
+
+    let switch (sources:IObservable<IObservable<'Source>>) : IObservable<'Source>= 
+        Observable.Switch(sources)
+
+
+    let startWith source param = 
+        Observable.StartWith(source, param)
+
+
+    let pairwise (source:IObservable<'a>) : IObservable<'a*'a> = 
+        Observable.pairwise(source)
+
+
+    let partition predicate t = 
+        Observable.partition( predicate t)
+
+
+
+    
 
 
 
