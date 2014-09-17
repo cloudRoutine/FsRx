@@ -122,6 +122,13 @@ module Observable =
 
 
 
+    /// Continues an observable sequence that is terminated
+    /// by an exception with the next observable sequence.
+    let catch (second: IObservable<'T>) first =
+        Observable.Catch(first, second) 
+
+
+
     let combineLatest (left:IObservable<'TLeft>) (right:IObservable<'TRight>) =
         let left  = left  |> Observable.map( fun x -> Some x, None )
         let right = right |> Observable.map( fun x -> None, Some x )
@@ -178,6 +185,10 @@ module Observable =
                 observer.OnError e
                 { new IDisposable with member this.Dispose() = () }
         }
+
+
+    /// Folds the observable
+    let fold f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
 
 
     let FromEvent<'EventArgs, 'TDelegate when 'EventArgs:> EventArgs>
@@ -254,6 +265,9 @@ module Observable =
     let head obs = Observable.FirstAsync(obs)
 
 
+    /// Determines whether the given observable is empty 
+    let isEmpty source = source = Observable.Empty()
+
 
     /// Maps the given observable with the given function
     let map f source = Observable.Select(source, Func<_,_>(f))   
@@ -276,7 +290,8 @@ module Observable =
     let merge (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Merge(first, second)
 
 
-    let ofSeq<'TItem>(items:'TItem seq) =
+    /// Returns the sequence as an observable
+    let ofSeq<'Item>(items:'Item seq) : IObservable<'Item> =
         {   
             new IObservable<_> with
                 member __.Subscribe( observer:IObserver<_> ) =
@@ -286,7 +301,7 @@ module Observable =
         }
 
 
-        /// Iterates through the observable and performs the given side-effect
+    /// Iterates through the observable and performs the given side-effect
     let perform f source =
         let inner x = f x
         Observable.Do(source, inner)
@@ -314,12 +329,22 @@ module Observable =
         }
 
 
+    /// Samples the observable at the given interval
+    let sample (interval: TimeSpan) source =
+        Observable.Sample(source, interval)
+
+
     /// Skips n elements
     let skip (n: int) source = Observable.Skip(source, n)
      
 
     /// Skips elements while the predicate is satisfied
     let skipWhile f source = Observable.SkipWhile(source, Func<_,_> f)
+
+
+    /// Determines whether an observable sequence contains a specified value
+    /// which satisfies the given predicate
+    let exists f source = source |> skipWhile (not << f) |> (not << isEmpty)
 
 
     /// Subscribes to the Observable with a next fuction.
@@ -351,6 +376,21 @@ module Observable =
 
     /// Takes n elements
     let take (n: int) source = Observable.Take(source, n)    
+
+
+    /// Returns the elements from the source observable sequence until the other produces and element
+    let takeUntil<'Other,'Source> other source =
+        Observable.TakeUntil<'Source,'Other>(source , other )
+
+
+    /// Returns the elements from the source observable until the specified time
+    let takeUntilTime<'Source> (endtime:DateTimeOffset) source =
+        Observable.TakeUntil<'Source>(source , endtime )
+
+    /// Returns the elements from the source observable until the specified time
+    let takeUntilTimer<'Source> (endtime:DateTimeOffset) scheduler source =
+        Observable.TakeUntil<'Source>(source , endtime, scheduler )
+
 
 
     let takeWhile f (source:IObservable<'TSource>) =
