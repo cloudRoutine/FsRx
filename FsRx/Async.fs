@@ -1,6 +1,11 @@
 ﻿// ----------------------------------------------------------------------------
-// F# async extensions
-// (c) Tomas Petricek, David Thomas 2012, Available under Apache 2.0 license.
+// (AsyncWorker) First version copied from the F# Power Pack --  https://raw.github.com/fsharp/powerpack/master/src/FSharp.PowerPack/AsyncOperations.fs
+// (c) Microsoft Corporation 2005-2009.
+// (AsyncResult) First version copied from the F# Power Pack -- https://raw.github.com/fsharp/powerpack/master/src/FSharp.PowerPack/AsyncWorker.fs
+// (c) Microsoft Corporation 2005-2009. 
+// | F# async extensions |
+//  Original (c) Tomas Petricek, David Thomas 2012, Available under Apache 2.0 license.
+//  Modified  by Jared Hester, 2014
 // ----------------------------------------------------------------------------
 namespace FSharp.Control
 open System
@@ -10,6 +15,7 @@ open System.Threading
 
 [<AutoOpen>]
 module AsyncExtensions = 
+
     type Microsoft.FSharp.Control.Async with 
 
       /// Creates an asynchronous workflow that runs the asynchronous workflow
@@ -36,31 +42,21 @@ module AsyncExtensions =
           { new IDisposable with 
               member x.Dispose() = ct.Cancel() }
 
-#if NET40
 
-      /// Starts a non-generic Task with the cancellationToken and returns an
-      /// Async<unit> containing the result.
-      static member AwaitTask(task:Tasks.Task, ?cancellationToken) =
-          let cancel = defaultArg cancellationToken Async.DefaultCancellationToken
-          Async.AwaitTask <| task.ContinueWith((fun t -> ()), cancel)
 
-      /// Starts a Task<'a> with the timeout and cancellationToken and
-      /// returns a Async<a' option> containing the result.  If the Task does
-      /// not complete in the timeout interval, or is faulted None is returned.
-      static member TryAwaitTask(task:Tasks.Task<_>, ?timeout, ?cancellationToken) =
-          let timeout = defaultArg timeout Timeout.Infinite
-          let cancel = defaultArg cancellationToken Async.DefaultCancellationToken
-          async {
-              return
-                if task.Wait(timeout, cancel) && not task.IsCanceled && not task.IsFaulted
-                then Some task.Result
-                else None }
+    [<NoEquality; NoComparison>]
+    type AsyncResult<'T>  =
+        |   AsyncOk         of 'T
+        |   AsyncException  of exn
+        |   AsyncCanceled   of OperationCanceledException
 
-    /// Implements an extension method that overloads the standard
-    /// 'Bind' of the 'async' builder. The new overload awaits on 
-    /// a standard .NET task
-    type Microsoft.FSharp.Control.AsyncBuilder with
-        member x.Bind(t:Tasks.Task<'T>, f:'T -> Async<'R>) : Async<'R> = async.Bind(Async.AwaitTask t, f)
-        member x.Bind(t:Tasks.Task, f:unit -> Async<'R>)   : Async<'R> = async.Bind(Async.AwaitTask t, f)
+        static member Commit( res:AsyncResult<'T> ) = 
+            Async.FromContinuations 
+                (   fun (cont,econt,ccont) -> 
+                       match res with 
+                       | AsyncOk        v   -> cont  v 
+                       | AsyncException exn -> econt exn 
+                       | AsyncCanceled  exn -> ccont exn 
+                )
+    
 
-#endif
