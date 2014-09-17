@@ -50,3 +50,4 @@ type BatchProcessingAgent<'T>(batchSize, timeout) =
     /// Dispose
     interface IDisposable with
         member x.Dispose() = cts.Cancel()
+

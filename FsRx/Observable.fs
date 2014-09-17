@@ -106,7 +106,10 @@ module Observable =
         Observable.Catch(first, second) 
 
 
+    /// 
+   
 
+    /// This will probably be removed later
     let combineLatest (left:IObservable<'TLeft>) (right:IObservable<'TRight>) =
         let left  = left  |> Observable.map( fun x -> Some x, None )
         let right = right |> Observable.map( fun x -> None, Some x )
@@ -165,6 +168,7 @@ module Observable =
         }
 
 
+    /// Filters the elements of an observable sequence based on a predicate
     let filter  (predicate:'T->bool) (source:IObservable<'T>) = 
         Observable.Where( source, predicate )
 
@@ -172,19 +176,9 @@ module Observable =
     /// Folds the observable
     let fold f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
 
+    let aggregate f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
+    //Observable.fo
 
-    let FromEvent<'EventArgs, 'TDelegate when 'EventArgs:> EventArgs>
-        (   conversion      :Func<Action<'EventArgs>,'TDelegate>   ,
-            addHandler      :Action<'TDelegate>                     ,
-            removeHandler   :Action<'TDelegate>                     )  =
-        { 
-            new IObservable<'EventArgs> with
-            member this.Subscribe(observer:IObserver<_>) =
-                let handler = Action<_>(observer.OnNext) |> conversion.Invoke
-                addHandler.Invoke handler
-                let remove () = removeHandler.Invoke handler
-                { new IDisposable with member this.Dispose() = remove () }
-        }
 
 
     let fromEvent<'EventArgs, 'Delegate when 'EventArgs:> EventArgs>
@@ -200,18 +194,6 @@ module Observable =
                 { new IDisposable with member this.Dispose() = remove () }
         }
 
-
-
-    let FromEventHandler<'EventArgs when 'EventArgs:> EventArgs>
-        (addHandler:Action<EventHandler<_>>,
-            removeHandler:Action<EventHandler<_>>)  =
-        { new IObservable<_> with
-            member this.Subscribe(observer:IObserver<_>) =
-                let handler = EventHandler<_>(fun _ x -> observer.OnNext x) 
-                addHandler.Invoke handler
-                let remove () = removeHandler.Invoke handler
-                { new IDisposable with member this.Dispose() = remove () }
-        }
 
 
     let fromEventHandler<'EventArgs when 'EventArgs:> EventArgs>
@@ -254,7 +236,8 @@ module Observable =
     /// Maps the given observable with the given function
     let map f source = Observable.Select(source, Func<_,_>(f))   
 
-
+    /// Maps the given observable with the given function and the 
+    /// index of the element
     let mapi (f:int -> 'TSource -> 'TResult) (source:IObservable<'TSource>) =
         source 
         |> Observable.scan ( fun (i,_) x -> (i+1,Some(x))) (-1,None)
@@ -288,6 +271,7 @@ module Observable =
         let inner x = f x
         Observable.Do(source, inner)
      
+
     /// Invokes the finally action after source observable sequence terminates normally or by an exception.
     let performFinally f source = Observable.Finally(source, Action f)
 
@@ -299,8 +283,8 @@ module Observable =
     /// Reduces the observable
     let reduce f source = Observable.Aggregate(source, Func<_,_,_> f)
 
-
     
+
 
     let result x : IObservable<_>=
         { new IObservable<_> with
@@ -335,8 +319,10 @@ module Observable =
 
 
     /// Subscribes to the Observable with a next and an error-function.
-    let subscribeWithError(onNext: 'T -> unit) (onError: exn -> unit) (observable: IObservable<'T>) =
-          observable.Subscribe(Action<_> onNext, Action<exn> onError)
+    let subscribeWithError  ( onNext     : 'T   -> unit     ) 
+                            ( onError    : exn  -> unit     ) 
+                            ( observable : IObservable<'T>  ) =
+        observable.Subscribe( Action<_> onNext, Action<exn> onError )
     
      
     /// Subscribes to the Observable with a next and a completion callback.
@@ -361,12 +347,15 @@ module Observable =
         Observable.All(source, pred )
 
 
+
+    /// Creates a pattern that matches when both observable sequences have an available element
     let bothSatisfy<'Left,'Right>  left right = 
         Observable.And<'Left,'Right>(left, right )
 
 
-//    let cast<'CastType> (source) =
-//        Observable.Cast<'CastType>(source)
+    /// Converts the elements of the sequence to the specified type
+    let cast<'CastType> (source) =
+        Observable.Cast<'CastType>(source)
 
 
     /// Produces an enumerable sequence of consequtive (possibly empty) chunks of the source observable
@@ -374,8 +363,11 @@ module Observable =
         Observable.Chunkify<'Source>( source )
 
 
+    /// Produces and enumerable sequence that returns elements collected/aggregated 
+    /// from the source sequence between consecutive iterations 
     let collect  newCollector merge source = 
         Observable.Collect(source, newCollector, merge )
+
 
     /// Returns an observable sequence containing a int64 that represents 
     /// the total number of elements in an observable sequence 
@@ -403,22 +395,38 @@ module Observable =
         Observable.ToList(source)
 
 
+    /// Exposes and observable sequence as an object with an Action based .NET event
     let toEvent source = 
         Observable.ToEvent(source)
 
 //    let toAsync source = 
 //        Observable.ToAsync(source)
 
+
+    /// Creates an observable sequence according to a specified key selector function
     let toDictionary keySelector source = 
         Observable.ToDictionary(source, keySelector)
 
 
-    let toDictionaryComparer keySelector comparer source =
-        Observable.ToDictionary<'Source,'Key,'Element>( source, keySelector, comparer )
+    /// Creates an observable sequence according to a specified key selector function
+    /// and an a comparer
+    let toDictionaryComparer (keySelector:'Source->'Key) (comparer:'Key) (source:'Source) =
+        Observable.ToDictionary( source, keySelector, comparer )
     
 
+    /// Creates an observable sequence according to a specified key selector function
     let toDictionaryElements (keySelector:'Source->'Key )(elementSelector:'Source->'Elm) (source:'Source) =
         Observable.ToDictionary(source, keySelector, elementSelector)    
+
+
+    /// Creates an observable sequence according to a specified key selector function
+    let toDictionaryCompareElements ( keySelector    : 'Source -> 'Key  )
+                                    ( elementSelector: 'Source ->' Elm  ) 
+                                    ( comparer:'Key ) ( source:'Source  ) =
+        Observable.ToDictionary(    source                              , 
+                                    Func<'Source,'Key> keySelector      , 
+                                    Func<'Source,'Elm> elementSelector  , 
+                                    comparer                            ) 
 
 
 //    let forEachAsync source = 
@@ -428,20 +436,33 @@ module Observable =
     let takeLast (count:int) source = 
         Observable.TakeLast(source, count)
 
+
+    /// Returns the first element of an observable sequence
     let firstAsync  = 
         Observable.FirstAsync
+
 
     let generate initialstate condition iterator selector = 
         Observable.Generate( initialstate, condition, iterator, selector )
 
+
     let latest source = 
         Observable.Latest( source )
 
+    /// Materializes the implicit notifications of an observable sequence as
+    /// explicit notification values
     let materialize source = 
         Observable.Materialize( source )
 
+
     let dematerialize source = 
         Observable.Dematerialize(source)
+
+///--------------------------------------------------
+
+//// TODO IMPLEMENT ALL 18 OF THE OVERLOADS
+ ///  Observable.CombineLatest()
+
 
 
 ///---------TODO - IMPLEMENT THE 7 OVERLOADS
@@ -451,13 +472,21 @@ module Observable =
 //    let groupUntil source = 
 //        Observable.GroupByUntil(source)
 
-    let groupJoin source = 
-        Observable.GroupJoin
+
+    /// Correlates the elements of two sequences based on overlapping 
+    /// durations and groups the results
+    let groupJoin   ( left:IObservable<'Left>) (right:IObservable<'Right> )  
+                    ( leftselect  : 'Left -> IObservable<'a> ) 
+                    ( rightselect : 'Right-> IObservable<'b> ) 
+                    ( resultselect: 'Left -> IObservable<'Right>->'Result )  = 
+        Observable.GroupJoin(   left, right, 
+                                Func<'Left , IObservable<'a>>            leftselect  , 
+                                Func<'Right, IObservable<'b>>            rightselect , 
+                                Func<'Left , IObservable<'Right>,'Result>resultselect)
 
     let maxOf (source:IObservable<'T>) = 
         Observable.Max( source )
 
-/// NEEED TO ADD FILTER
 
 
 //    let maxBy source = 
@@ -472,12 +501,16 @@ module Observable =
 //    let using  source = 
 //        Observable.Using(source)
 
-    let joinWhen (plans:IEnumerable<Joins.Plan<'T>>) = 
+
+    /// Joins together the results from several patterns
+    let joinWhen (plans:IEnumerable<Joins.Plan<'T>>): IObservable<'T>= 
         Observable.When( plans )
+
 
     /// Filters the observable elements of a sequence based on a predicate 
     let where  (predicate:'T->bool) (source:IObservable<'T>) = 
         Observable.Where( source, predicate )
+
 
     /// Filters the observable elements of a sequence based on a predicate by 
     /// incorporating the element's index
@@ -485,10 +518,14 @@ module Observable =
         Observable.Where( source, predicate )
 
 
+    /// Returns and observable sequence that produces a value after each period
     let interval period = 
         Observable.Interval( period )
 
-
+    /// Returns an observable sequence whose enumeration blocks until the next
+    /// element in the source observable sequence becomes available. 
+    /// Enumerators  on the resulting sequence will block until the next
+    /// element becomes available.
     let next source = 
         Observable.Next( source ) 
 
@@ -535,6 +572,10 @@ module Observable =
         Observable.Synchronize( source )
 
 
+    /// Transforms an observable sequence of observable sequences into an 
+    /// observable sequence producing values only from the most recent 
+    /// observable sequence.Each time a new inner observable sequnce is recieved,
+    /// unsubscribe from the previous inner sequence
     let switch (sources:IObservable<IObservable<'Source>>) : IObservable<'Source>= 
         Observable.Switch(sources)
 
@@ -551,8 +592,12 @@ module Observable =
         Observable.partition( predicate t )
 
 
-
-    
+    /// Applies an accumulator function over an observable sequence
+    /// and returns each intermediate result. The specified seed value 
+    /// is used as the initial accumulator value. For aggreagation behavior
+    /// without intermediate results use 'aggregate'
+    let scan (collector:'a->'b->'a) state source =
+        Observable.Scan(source,  state, Func<'a,'b,'a>collector )
 
 
 
@@ -597,7 +642,7 @@ module Observable =
 
 
 
-        /// Returns an observable that yields sliding windows of 
+    /// Returns an observable that yields sliding windows of 
     /// containing elements drawn from the input observable. 
     /// Each window is returned as a fresh array.
     let windowed size (input:IObservable<'T>) =
@@ -718,38 +763,39 @@ module Observable =
         if ctx <> null && ctx <> nctx then ctx.Post((fun _ -> g()), null)
         else g() )
 
-
-    type ObservableBuilder() =
-        member this.Return(x) =
-            Observable.Return x
-        member this.ReturnFrom(m: IObservable<_>) = m
-        member this.Bind(m: IObservable<'T>, f: 'T -> IObservable<'TNext>) =
-            m.SelectMany(Func<_,_> f)
-        member this.Combine(comp1: IObservable<'T>, comp2: IObservable<'T>) =
-            Observable.Concat(comp1, comp2)
-        member this.Delay(f) =
-            Observable.Defer(f: Func<IObservable<'T>>)
-        member this.Zero() =
-            Observable.Empty()
-        member this.TryWith(m: IObservable<_>, h: exn -> IObservable<_>) =
-            Observable.Catch(m, h)
-        member this.TryFinally(m: IObservable<_>, compensation: unit -> unit) =
-            Observable.Finally(m, Action(compensation))
-        member this.Using(res: #IDisposable, body) =
-            this.TryFinally(body res, fun () -> match res with null -> () | disp -> disp.Dispose())
-        member this.While(guard, m: IObservable<_>) =
-            if not (guard()) then
-                Observable.Empty()
-            else
-                m.SelectMany(Func<_,_>(fun () -> this.While(guard, m)))
-        member this.For(sequence, body) =
-            Observable.For(sequence, body)
-        // TODO: Are these the correct implementation? Are they necessary?
-        member this.Yield(x) =
-            Observable.Return x
-        member this.YieldFrom(m: IObservable<_>) = m
-
-    let observe = ObservableBuilder()
+// TODO :: Is this really necessary?
+//
+//    type ObservableBuilder() =
+//        member this.Return(x) =
+//            Observable.Return x
+//        member this.ReturnFrom(m: IObservable<_>) = m
+//        member this.Bind(m: IObservable<'T>, f: 'T -> IObservable<'TNext>) =
+//            m.SelectMany(Func<_,_> f)
+//        member this.Combine(comp1: IObservable<'T>, comp2: IObservable<'T>) =
+//            Observable.Concat(comp1, comp2)
+//        member this.Delay(f) =
+//            Observable.Defer(f: Func<IObservable<'T>>)
+//        member this.Zero() =
+//            Observable.Empty()
+//        member this.TryWith(m: IObservable<_>, h: exn -> IObservable<_>) =
+//            Observable.Catch(m, h)
+//        member this.TryFinally(m: IObservable<_>, compensation: unit -> unit) =
+//            Observable.Finally(m, Action(compensation))
+//        member this.Using(res: #IDisposable, body) =
+//            this.TryFinally(body res, fun () -> match res with null -> () | disp -> disp.Dispose())
+//        member this.While(guard, m: IObservable<_>) =
+//            if not (guard()) then
+//                Observable.Empty()
+//            else
+//                m.SelectMany(Func<_,_>(fun () -> this.While(guard, m)))
+//        member this.For(sequence, body) =
+//            Observable.For(sequence, body)
+//        // TODO: Are these the correct implementation? Are they necessary?
+//        member this.Yield(x) =
+//            Observable.Return x
+//        member this.YieldFrom(m: IObservable<_>) = m
+//
+//    let observe = ObservableBuilder()
 
 
 
@@ -894,91 +940,91 @@ module Observable =
 
 open System.Runtime.CompilerServices
 
-[<Extension>]
-type ObservableExtensions private () =
-
-    [<Extension>]
-    static member ToObservable<'TItem>(source:IEnumerable<'TItem>) =
-        source |> Observable.ofSeq
-
-    [<Extension>]
-    static member Subscribe<'TSource>(source:IObservable<'TSource>, action:Action<'TSource>) =
-        source.Subscribe action.Invoke
-
-    [<Extension>]
-    static member Where<'TSource>(source:IObservable<'TSource>, predicate:Func<'TSource,bool>) =
-            source |> Observable.filter predicate.Invoke
-
-    [<Extension>]
-    static member Select<'TSource,'TResult>(source:IObservable<'TSource>,selector:Func<'TSource,'TResult>) =
-        source |> Observable.map selector.Invoke
-
-    [<Extension>]
-    static member Select<'TSource,'TResult>(source:IObservable<'TSource>,selector:Func<'TSource,int,'TResult>) =
-        source |> Observable.mapi (fun i x -> selector.Invoke(x,i))
-
-    [<Extension>]
-    static member SelectMany<'TSource,'TCollection,'TResult>
-            (   source              : IObservable<'TSource>                     ,
-                collectionSelector  : Func<'TSource,IEnumerable<'TCollection>>  ,
-                resultSelector      : Func<'TSource,'TCollection,'TResult>      ) =
-        { new IObservable<'TResult> with
-            member this.Subscribe(observer:IObserver<_>) =
-                let disposable = source.Subscribe(fun s -> 
-                    let cs = collectionSelector.Invoke s
-                    for c in cs do
-                        let r = resultSelector.Invoke(s,c)
-                        observer.OnNext(r)
-                )
-                { new IDisposable with 
-                    member this.Dispose() = disposable.Dispose() }
-        }
-
-    [<Extension>]
-    static member TakeWhile<'TSource>(source:IObservable<'TSource>,f:Func<'TSource, bool>) =
-        source |> Observable.takeWhile f.Invoke
-
-    [<Extension>]
-    static member Merge<'TSource>(source:IObservable<'TSource>, sources:IEnumerable<IObservable<'TSource>>) =
-
-        let rec merge source = function
-            | [] -> source
-            | source'::sources' ->
-                let result = Observable.merge source source'
-                merge result sources'
-        sources |> Seq.toList |> merge source
-
-    [<Extension>]
-    static member Merge<'TSource>(source:IObservable<'TSource>, [<ParamArray>] sources:IObservable<'TSource> []) =
-        ObservableExtensions.Merge(source,sources |> Seq.ofArray)
-
-    [<Extension>]
-    static member Scan<'TSource,'TAccumulate>(source:IObservable<'TSource>, seed:'TAccumulate, f:Func<'TAccumulate,'TSource,'TAccumulate>) =
-        source |> Observable.scan (fun acc x -> f.Invoke(acc,x)) seed
-
-    [<Extension>]
-    static member CombineLatest<'TLeft,'TRight,'TResult>(left:IObservable<'TLeft>, right:IObservable<'TRight>, selector:Func<'TLeft, 'TRight, 'TResult>) =
-        Observable.combineLatest left right
-        |> Observable.map selector.Invoke
-
-    [<Extension>]
-    static member Zip<'TLeft,'TRight,'TResult>(left:IObservable<'TLeft>,right:IObservable<'TRight>,selector:Func<'TLeft, 'TRight, 'TResult>) =
-        Observable.zip left right
-        |> Observable.map selector.Invoke
-
-    [<Extension>]
-    static member Delay<'TSource>(source:IObservable<'TSource>,milliseconds:int) =
-        source |> Observable.delay milliseconds
-
-    [<Extension>]
-    static member BufferWithTimeOrCount<'TSource>(source:IObservable<'TSource>, timeSpan:TimeSpan, count:int) =
-        source |> Observable.bufferWithTimeOrCount timeSpan count
-
-    [<Extension>]
-    static member Throttle<'TSource>(source:IObservable<'TSource>, dueTime:TimeSpan) =
-        let dueTime = int dueTime.TotalMilliseconds
-        source |> Observable.throttle dueTime
-
+//[<Extension>]
+//type ObservableExtensions private () =
+//
+//    [<Extension>]
+//    static member ToObservable<'TItem>(source:IEnumerable<'TItem>) =
+//        source |> Observable.ofSeq
+//
+//    [<Extension>]
+//    static member Subscribe<'TSource>(source:IObservable<'TSource>, action:Action<'TSource>) =
+//        source.Subscribe action.Invoke
+//
+//    [<Extension>]
+//    static member Where<'TSource>(source:IObservable<'TSource>, predicate:Func<'TSource,bool>) =
+//            source |> Observable.filter predicate.Invoke
+//
+//    [<Extension>]
+//    static member Select<'TSource,'TResult>(source:IObservable<'TSource>,selector:Func<'TSource,'TResult>) =
+//        source |> Observable.map selector.Invoke
+//
+//    [<Extension>]
+//    static member Select<'TSource,'TResult>(source:IObservable<'TSource>,selector:Func<'TSource,int,'TResult>) =
+//        source |> Observable.mapi (fun i x -> selector.Invoke(x,i))
+//
+//    [<Extension>]
+//    static member SelectMany<'TSource,'TCollection,'TResult>
+//            (   source              : IObservable<'TSource>                     ,
+//                collectionSelector  : Func<'TSource,IEnumerable<'TCollection>>  ,
+//                resultSelector      : Func<'TSource,'TCollection,'TResult>      ) =
+//        { new IObservable<'TResult> with
+//            member this.Subscribe(observer:IObserver<_>) =
+//                let disposable = source.Subscribe(fun s -> 
+//                    let cs = collectionSelector.Invoke s
+//                    for c in cs do
+//                        let r = resultSelector.Invoke(s,c)
+//                        observer.OnNext(r)
+//                )
+//                { new IDisposable with 
+//                    member this.Dispose() = disposable.Dispose() }
+//        }
+//
+//    [<Extension>]
+//    static member TakeWhile<'TSource>(source:IObservable<'TSource>,f:Func<'TSource, bool>) =
+//        source |> Observable.takeWhile f.Invoke
+//
+//    [<Extension>]
+//    static member Merge<'TSource>(source:IObservable<'TSource>, sources:IEnumerable<IObservable<'TSource>>) =
+//
+//        let rec merge source = function
+//            | [] -> source
+//            | source'::sources' ->
+//                let result = Observable.merge source source'
+//                merge result sources'
+//        sources |> Seq.toList |> merge source
+//
+//    [<Extension>]
+//    static member Merge<'TSource>(source:IObservable<'TSource>, [<ParamArray>] sources:IObservable<'TSource> []) =
+//        ObservableExtensions.Merge(source,sources |> Seq.ofArray)
+//
+//    [<Extension>]
+//    static member Scan<'TSource,'TAccumulate>(source:IObservable<'TSource>, seed:'TAccumulate, f:Func<'TAccumulate,'TSource,'TAccumulate>) =
+//        source |> Observable.scan (fun acc x -> f.Invoke(acc,x)) seed
+//
+//    [<Extension>]
+//    static member CombineLatest<'TLeft,'TRight,'TResult>(left:IObservable<'TLeft>, right:IObservable<'TRight>, selector:Func<'TLeft, 'TRight, 'TResult>) =
+//        Observable.combineLatest left right
+//        |> Observable.map selector.Invoke
+//
+//    [<Extension>]
+//    static member Zip<'TLeft,'TRight,'TResult>(left:IObservable<'TLeft>,right:IObservable<'TRight>,selector:Func<'TLeft, 'TRight, 'TResult>) =
+//        Observable.zip left right
+//        |> Observable.map selector.Invoke
+//
+//    [<Extension>]
+//    static member Delay<'TSource>(source:IObservable<'TSource>,milliseconds:int) =
+//        source |> Observable.delay milliseconds
+//
+//    [<Extension>]
+//    static member BufferWithTimeOrCount<'TSource>(source:IObservable<'TSource>, timeSpan:TimeSpan, count:int) =
+//        source |> Observable.bufferWithTimeOrCount timeSpan count
+//
+//    [<Extension>]
+//    static member Throttle<'TSource>(source:IObservable<'TSource>, dueTime:TimeSpan) =
+//        let dueTime = int dueTime.TotalMilliseconds
+//        source |> Observable.throttle dueTime
+//
 // ----------------------------------------------------------------------------
 
 type private CircularBuffer<'T> (bufferSize:int) =
