@@ -1,7 +1,7 @@
 ﻿// ----------------------------------------------------------------------------
 // F# async extensions (AsyncSeq.fs)
-// (c) Tomas Petricek, 2011, Available under Apache 2.0 license.
-// Modified by Jared Hester 2014
+// Original (c) Tomas Petricek, 2011, Available under Apache 2.0 license.
+// Modified by  Jared Hester, 2014
 // ----------------------------------------------------------------------------
 namespace FSharp.Control
 
@@ -285,9 +285,9 @@ module AsyncSeq =
 
   /// Creates an asynchronous sequence that lazily takes element from an
   /// input synchronous sequence and returns them one-by-one.
-  let ofSeq (input : seq<'T>) = asyncSeq {
-    for el in input do 
-      yield el }
+  let ofSeq (input : seq<'T>) : AsyncSeq<'T> =
+    asyncSeq{   for el in input do 
+                    yield el        }
 
   /// A helper type for implementation of buffering when converting 
   /// observable to an asynchronous sequence

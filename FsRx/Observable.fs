@@ -1,7 +1,7 @@
 ﻿// ----------------------------------------------------------------------------
 // F# async extensions (Observable.fs)
 // Original (c) Tomas Petricek, Phil Trelford, and Ryan Riley, 2011-2012, Available under Apache 2.0 license.
-// Modified by Jared Hester 2014
+// Modified by  Jared Hester, 2014
 // ----------------------------------------------------------------------------
 #nowarn "40"
 namespace FSharp.Control
@@ -63,28 +63,6 @@ module Observable =
             Observable.Create( Func<_,IDisposable> subscribe )
 
 
-
-        
-//    //type IObservable<'T> with
-//        [<Extension>]
-//        /// Subscribes to the Observable with just a next-function.
-//        member this.Subscribe(onNext: 'T -> unit) =
-//            this.Subscribe( Action<_> onNext )
-//
-//        [<Extension>]
-//        /// Subscribes to the Observable with a next and an error-function.
-//        member this.Subscribe(onNext: 'T -> unit, onError: exn -> unit) =
-//            this.Subscribe( Action<_> onNext, Action<exn> onError )
-//     
-//        [<Extension>]
-//        /// Subscribes to the Observable with a next and a completion callback.
-//        member this.Subscribe(onNext: 'T -> unit, onCompleted: unit -> unit) =
-//            this.Subscribe( Action<_> onNext, Action onCompleted )
-//
-//        [<Extension>]
-//        /// Subscribes to the Observable with all 3 callbacks.
-//        member this.Subscribe(onNext, onError, onCompleted) =
-//            this.Subscribe( Action<_> onNext, Action<_> onError, Action onCompleted )
 
 
 
@@ -245,18 +223,18 @@ module Observable =
         }
 
     /// Generates an observable from an IEvent<_> as an EventPattern.
-    let fromEventPattern<'T> (target:obj) eventName =
+    let fromEventPattern<'T> eventName  (target:obj) =
         Observable.FromEventPattern( target, eventName )
 
 
     /// Creates an observable that calls the specified function (each time)
     /// after an observer is attached to the observable. This is useful to 
     /// make sure that events triggered by the function are handled. 
-    let guard f (e:IObservable<'Args>) =  
+    let guard f (source:IObservable<'Args>) =  
         {   
             new IObservable<'Args> with  
                 member x.Subscribe( observer ) =  
-                    let rm = e.Subscribe( observer ) in f() 
+                    let rm = source.Subscribe( observer ) in f() 
                     ( rm )
         } 
 
@@ -372,6 +350,154 @@ module Observable =
     /// Subscribes to the observable with the given observer
     let subscribeObserver observer (observable: IObservable<'T>) =
         observable.Subscribe observer
+
+
+    /// Determines whether all elements of and observable satisfy a predicate
+    let all pred source =
+        Observable.All(source, pred )
+
+
+    let bothSatisfy<'Left,'Right>  left right = 
+        Observable.And<'Left,'Right>(left, right )
+
+
+    let cast<'CastType> source =
+        Observable.Cast<'CastType>(source)
+
+
+
+    let chunkify source = 
+        Observable.Chunkify
+
+    let collect  newCollector merge source = 
+        Observable.Collect(source, newCollector, merge )
+    
+    let longCount source = 
+        Observable.LongCount
+
+    let distinct source = 
+        Observable.Distinct
+
+    let distinctUntilChanged source = 
+        Observable.DistinctUntilChanged
+
+    let toArray  source = 
+        Observable.ToArray
+
+    let toList source = 
+        Observable.ToList
+
+    let toEvent source = 
+        Observable.ToEvent
+
+    let toAsync source = 
+        Observable.ToAsync
+
+    let toDictionary source = 
+        Observable.ToDictionary
+
+    let toEnumerable source = 
+        Observable.ToEnumerable
+
+    let forEachAsync source = 
+        Observable.ForEachAsync
+
+    let takeLast source = 
+        Observable.TakeLast
+
+    let firstAsync source = 
+        Observable.FirstAsync
+
+    let generate source = 
+        Observable.Generate
+
+    let latest source = 
+        Observable.Latest
+
+    let materialize source = 
+        Observable.Materialize
+
+    let dematerialize source = 
+        Observable.Dematerialize
+
+    let groupBy source = 
+        Observable.GroupBy
+
+    let groupUntil source = 
+        Observable.GroupByUntil
+
+    let groupJoin source = 
+        Observable.GroupJoin
+
+    let maxOf source = 
+        Observable.Max
+
+    let maxBy source = 
+        Observable.MaxBy
+
+    let minOf source = 
+        Observable.Min
+
+    let minBy source = 
+        Observable.MinBy
+
+    let using  source = 
+        Observable.Using
+
+    let  source = 
+        Observable.When
+
+    let  source = 
+        Observable.Where
+
+    let  source = 
+        Observable.Interval
+
+    let  source = 
+        Observable.Next
+
+    let  source = 
+        Observable.OfType
+
+    let  source = 
+        Observable.OnErrorResumeNext
+
+    let  source = 
+        Observable.Publish
+
+    let  source = 
+        Observable.PublishLast
+
+    let  source = 
+        Observable.Wait
+
+    let  source = 
+        Observable.Then
+
+    let  source = 
+        Observable.TakeLastBuffer
+
+    let  source = 
+        Observable.MostRecent
+
+    let  source = 
+        Observable.Synchronize
+
+    let  source = 
+        Observable.Switch
+
+    let  source = 
+        Observable.StartWith
+
+    let  source = 
+        Observable.pairwise
+
+    let  source = 
+        Observable.partition
+
+
+
+
 
 
     /// Takes n elements
