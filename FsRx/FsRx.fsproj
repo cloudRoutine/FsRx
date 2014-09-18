@@ -39,13 +39,7 @@
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.Portable.FSharp.Targets" />
   <ItemGroup>
-    <Compile Include="AutoCancelAgent.fs" />
-    <Compile Include="BatchProcessingAgent.fs" />
-    <Compile Include="BlockingQueueAgent.fs" />
-    <Compile Include="SlidingWindowAgent.fs" />
     <Compile Include="Observable.fs" />
-    <Compile Include="Async.fs" />
-    <Compile Include="AsyncSeq.fs" />
     <None Include="Testing.fsx" />
     <Content Include="packages.config" />
   </ItemGroup>
