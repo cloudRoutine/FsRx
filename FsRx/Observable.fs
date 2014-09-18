@@ -1,18 +1,19 @@
 ﻿// ----------------------------------------------------------------------------
-// F# async extensions (Observable.fs)
-// Original (c) Tomas Petricek, Phil Trelford, and Ryan Riley, 2011-2012, Available under Apache 2.0 license.
-// Modified by  Jared Hester, 2014
+// (c) Jared Hester, 2014
 // ----------------------------------------------------------------------------
-#nowarn "40"
+
+
 namespace FSharp.Control
 
+
+
 open System
-open System.Collections.Generic
 open System.Threading
-open Microsoft.FSharp.Core
 open System.Reactive
 open System.Reactive.Linq
+open System.Collections.Generic
 open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core
 
 
 // ----------------------------------------------------------------------------
@@ -24,6 +25,9 @@ type ObservableUpdate<'T> =
     | Next      of 'T
     | Error     of exn
     | Completed
+
+
+
 
 module Observable =
 
@@ -172,7 +176,7 @@ module Observable =
 
 
     /// Produces an enumerable sequence of consequtive (possibly empty) chunks of the source observable
-    let chunkify<'Source> source : IEnumerable<IList<'Source>> = 
+    let chunkify<'Source> source : seq<IList<'Source>> = 
         Observable.Chunkify<'Source>( source )
 
 ///////////////////////////////////////////////
@@ -187,21 +191,47 @@ module Observable =
 
 ////////////////////////////////////////////////
 
-    /// Concats (flattens) an observable of observables into an observable
-    /// ===> Observable.SelectMany(observable, Func<_,_>(fun (x:IObservable<'T>) -> x))
-    let concat (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Concat(first, second)
+    /// Concatenates the second observable sequence to the first observable sequence
+    /// upn the successful termination of the first 
+    let concat (second: IObservable<'T>) (first: IObservable<'T>) =
+        Observable.Concat(first, second)
+    
 
-///////////////////////////////////////////////
+    /// Concatenates all observable sequences within the sequence as long as
+    /// the previous observable sequence terminated successfully 
+    let concatSeq (sources:seq<IObservable<'T>>) : IObservable<'T>=
+        Observable.Concat(sources)
 
-///  TODO :: concat 3
 
-////////////////////////////////////////////////
+    /// Concatenates all of the specified  observable sequences as long as
+    /// the previous observable sequence terminated successfully 
+    let concatArray (sources:IObservable<'T>[]) =
+        Observable.Concat(sources)
+
+
+    /// Concatenates all of the inner observable sequences as long as
+    /// the previous observable sequence terminated successfully 
+    let concatInner (sources: IObservable<IObservable<'T>>) =
+        Observable.Concat( sources )
+    
+
+    /// Concatenates all task results as long as
+    /// the previous taskterminated successfully
+    let concatTasks(sources: IObservable<Tasks.Task<'T>>) =
+        Observable.Concat( sources )
+
 
 
     /// Produces and enumerable sequence that returns elements collected/aggregated 
     /// from the source sequence between consecutive iterations 
     let collect  newCollector merge source = 
         Observable.Collect(source, newCollector, merge )
+
+///////////////////////////////////////////////
+
+///  TODO :: collect
+
+////////////////////////////////////////////////
 
 
     /// Connects the observable wrapper to its source. All subscribed
@@ -532,7 +562,7 @@ module Observable =
 
 
     /// Joins together the results from several patterns
-    let joinWhen (plans:IEnumerable<Joins.Plan<'T>>): IObservable<'T>= 
+    let joinWhen (plans:seq<Joins.Plan<'T>>): IObservable<'T>= 
         Observable.When( plans )
 
 

@@ -8,7 +8,10 @@
 #r "System.Collections"
 
 open FSharp.Control.Observable
+open System.Reactive
 open System
+
+
 
 
 let createTimerAndObservable timerInterval runtime =
