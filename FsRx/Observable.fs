@@ -19,15 +19,10 @@ open Microsoft.FSharp.Core
 module Observable =
 
 
-
-    let aggregate f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
-
-
-///////////////////////////////////////////////
-
-///  TODO :: aggregate 2
-
-////////////////////////////////////////////////
+    /// Applies an accumulator function over an observable sequence, returning the 
+    /// result of the aggregation as a single element in the result sequence
+    let aggregate accumulator source = 
+        Observable.Aggregate(source, Func<_,_,_> accumulator )
 
 
     /// Determines whether all elements of and observable satisfy a predicate
@@ -35,22 +30,21 @@ module Observable =
         Observable.All(source, pred )
 
 
-
     /// Returns the observable sequence that reacts first
     let amb second first = Observable.Amb(first, second)
 
-///////////////////////////////////////////////
 
-///  TODO :: amb 2
+    /// Propagates the observable sequence that reacts first
+    let ambSeq (source:seq<IObservable<'T>>) = Observable.Amb( source )
 
-////////////////////////////////////////////////
+
+    /// Propagates the observable sequence that reacts first
+    let ambArray (source:IObservable<'T>[]) = Observable.Amb( source  )
+
 
     /// Determines whether an observable sequence contains any elements
     let any  (source:IObservable<'Source>) : IObservable<bool> = 
         Observable.Any(source)
-
-
-
 
 
     /// Hides the identy of an observable sequence 
@@ -72,16 +66,86 @@ module Observable =
 
 ////////////////////////////////////////////////
 
-
     /// Matches when both observable sequences have an available value
     let both second first = Observable.And(first, second)   
 
 
-///////////////////////////////////////////////
+    // #region Buffers
 
-///  TODO :: buffer 11
 
-////////////////////////////////////////////////
+    let buffer (bufferClosingSelector:IObservable<'BufferClosing>) source = 
+        Observable.Buffer(source, bufferClosingSelector)
+
+    
+    /// Projects each element of an observable sequence into 
+    /// consequtive non-overlapping buffers based on a sequence of boundary markers
+    let bufferBounded (boundaries:IObservable<'BufferClosing>) source : IObservable<IList<'T>>= 
+        Observable.Buffer(source, boundaries)
+
+
+    /// Projects each element of an observable sequence into 
+    /// consequtive non-overlapping buffers produced based on count information
+    let bufferCount (count:int) source = 
+        Observable.Buffer(source, count)
+
+
+    /// Projects each element of an observable sequence into zero or more buffers
+    /// which are produced based on element count information
+    let bufferCountSkip (count:int) (skip:int) source = 
+        Observable.Buffer(source,count, skip)
+
+
+    /// Projects each element of an observable sequence into 
+    /// consequtive non-overlapping buffers produced based on timing information
+    let bufferSpan (timeSpan:TimeSpan) source = 
+        Observable.Buffer(source, timeSpan)
+
+
+    /// Projects each element of an observable sequence into a buffer that goes
+    /// sent out when either it's full or a specific amount of time has elapsed
+    /// Analogy - A boat that departs when it's full or at its scheduled time to leave
+    let bufferSpanCount (timeSpan:TimeSpan) (count:int) source = 
+        Observable.Buffer(source, timeSpan, count)
+
+
+    /// Projects each element of an observable sequence into 
+    /// consequtive non-overlapping buffers produced based on timing information
+    /// using the specified scheduler to run timing
+    let bufferSpanScheduled (timespan:TimeSpan) (scheduler:Concurrency.IScheduler) source = 
+        Observable.Buffer(source, timespan, scheduler )
+    
+
+    /// Projects each element of an observable sequence into zero of more buffers. 
+    /// bufferOpenings - observable sequence whose elements denote the opening of each produced buffer
+    /// bufferClosing - observable sequence whose elements denote the closing of each produced buffer
+    let bufferFork  ( bufferOpenings:IObservable<'BufferOpening>) 
+                    ( bufferClosingSelector: 'BufferOpening ->IObservable<'T> ) source = 
+        Observable.Buffer( source, bufferOpenings,Func<_,_> bufferClosingSelector)
+
+
+    /// Projects each element of an observable sequence into 
+    /// zero or more buffers produced based on timing information
+    let bufferSpanShift (timeSpan:TimeSpan) (timeShift:TimeSpan) source = 
+        Observable.Buffer(source, timeSpan, timeShift)
+
+
+    /// Projects each element of an observable sequence into a buffer that goes
+    /// sent out when either it's full or a specific amount of time has elapsed
+    /// using the specified scheduler to run timing
+    /// Analogy - A boat that departs when it's full or at its scheduled time to leave
+    let bufferSpanCountScheduled timeSpan (count:int) scheduler source = 
+        Observable.Buffer(source, timeSpan, count, scheduler )
+
+
+    /// Projects each element of an observable sequence into 
+    /// consequtive non-overlapping buffers produced based on timing information
+    let bufferSpanShiftScheduled (timeSpan:TimeSpan) (timeShift:TimeSpan) scheduler source = 
+        Observable.Buffer(source, timeSpan, timeShift, scheduler )
+
+
+    // #endregion
+
+
 
     
     /// Converts the elements of the sequence to the specified type
@@ -95,10 +159,12 @@ module Observable =
     let case selector sources =
         Observable.Case( Func<_> selector, sources )
 
+
     /// Uses selector to determine which source in sources to return,
     /// choosing defaultSource if no match is found
     let caseDefault selector (defaultSource:IObservable<'Result>) (sources:IDictionary<'Value,IObservable<'Result>>) =
         Observable.Case( Func<'Value> selector, sources, defaultSource )
+
 
     /// Uses selector to determine which source in sources to return,
     /// choosing an empty sequence on the specified scheduler if no match is found
@@ -127,7 +193,7 @@ module Observable =
 ///  TODO :: collect 2
 
 ////////////////////////////////////////////////
-
+    // #region CombineLatest Functions
 
     /// Merges the specified observable sequences into one observable sequence by 
     /// emmiting a list with the latest source elements of whenever any of the 
@@ -297,11 +363,6 @@ module Observable =
 
     // #endregion 
 
-///////////////////////////////////////////////
-
-///  TODO :: combineLatest 18
-
-////////////////////////////////////////////////
 
     /// Concatenates the second observable sequence to the first observable sequence
     /// upn the successful termination of the first 
@@ -472,14 +533,24 @@ module Observable =
 
 ////////////////////////////////////////////////
 
-    /// Generates an empty observable
+
+    /// Returns an empty observable
     let empty<'T> = Observable.Empty<'T>()
 
-///////////////////////////////////////////////
 
-///  TODO :: empty 3
+    /// Returns an empty Observable sequence
+    let emptyWitness<'T>(witness:'T) :IObservable<'T> =
+             Observable.Empty( witness )
 
-////////////////////////////////////////////////
+    /// Returns an empty Observable sequence, using the specified 
+    /// scheduler to send out the single OnCompleted message
+    let emptyScheduled<'T> (scheduler:Concurrency.IScheduler) = 
+            Observable.Empty<'T>(scheduler)
+
+
+     /// Generates an empty observable
+    let emptyScheduledWitness<'T> (scheduler:Concurrency.IScheduler) (witness:'T) =
+         Observable.Empty<'T>(scheduler, witness)
 
 
     let error e =
@@ -496,33 +567,27 @@ module Observable =
         Observable.Any(source, predicate)
 
 
-
-
     /// Filters the elements of an observable sequence based on a predicate
     let filter  (predicate:'T->bool) (source:IObservable<'T>) = 
         Observable.Where( source, predicate )
 
-///////////////////////////////////////////////
 
-///  TODO :: finally
+    /// Invokes a specified action after the source observable sequence
+    /// terminates gracefully of exceptionally
+    let finallyDo  finallyAction  source  =
+        Observable.Finally( source, Action finallyAction ) 
 
-////////////////////////////////////////////////
-
-///////////////////////////////////////////////
-
-///  TODO :: first 2
-
-////////////////////////////////////////////////
 
     /// Returns the first element of an observable sequence
-    let firstAsync  = 
-        Observable.FirstAsync
+    let firstAsync (source:IObservable<'T>)  = 
+        source.FirstAsync()
 
-///////////////////////////////////////////////
 
-///  TODO :: firstAsync 1
+    /// Returns the first element of an observable sequence
+    /// if it satisfies the predicate
+    let firstAsyncIf predicate (source:IObservable<'T>) =
+        source.FirstAsync( predicate )
 
-////////////////////////////////////////////////
 
 ///////////////////////////////////////////////
 
@@ -539,8 +604,21 @@ module Observable =
 ////////////////////////////////////////////////
 
 
-    /// Folds the observable
-    let fold f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
+
+
+    /// Applies an accumulator function over an observable sequence, returning the 
+    /// result of the fold as a single element in the result sequence
+    /// seed is the initial accumulator value
+    let fold accumulator seed source =
+        Observable.Aggregate(source, seed, Func<_,_,_> accumulator)
+
+
+    /// Applies an accumulator function over an observable sequence, returning the 
+    /// result of the fold as a single element in the result sequence
+    /// Seed is the initial accumulator value, map is performed after the fold
+    let foldMap accumulator seed map source =
+        Observable.Aggregate(source, seed,Func<_,_,_> accumulator,Func<_,_>  map )
+
 
 ///////////////////////////////////////////////
 
