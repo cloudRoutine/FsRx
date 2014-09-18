@@ -60,11 +60,26 @@ module Observable =
     let apply f m = f |> bind (fun f' -> m |> bind (fun m' -> Observable.Return(f' m')))
  
  
- ///////////////////////////////////////////////
-
-///  TODO :: average 20
-
-////////////////////////////////////////////////
+//    let Average : source:IObservable<Nullable<int>> -> IObservable<Nullable<float>>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,decimal> -> IObservable<decimal>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,float> -> IObservable<float>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,float32> -> IObservable<float32>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,int> -> IObservable<float>
+//    let Average : source:IObservable<Nullable<int64>> -> IObservable<Nullable<float>>
+//    let Average : source:IObservable<Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float>> -> IObservable<Nullable<float>>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float32>> -> IObservable<Nullable<float32>>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int>> -> IObservable<Nullable<float>>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,int64> -> IObservable<float>
+//    let Average : source:IObservable<Nullable<float32>> -> IObservable<Nullable<float32>>
+//    let Average : source:IObservable<int> -> IObservable<float>
+//    let Average : source:IObservable<int64> -> IObservable<float>
+//    let Average : source:IObservable<float> -> IObservable<float>
+//    let Average : source:IObservable<Nullable<float>> -> IObservable<Nullable<float>>
+//    let Average : source:IObservable<float32> -> IObservable<float32>
+//    let Average : source:IObservable<decimal> -> IObservable<decimal>
+//    let Average : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int64>> -> IObservable<Nullable<float>>
 
     /// Matches when both observable sequences have an available value
     let both second first = Observable.And(first, second)   
@@ -177,22 +192,40 @@ module Observable =
     let catch (second: IObservable<'T>) first =
         Observable.Catch(first, second) 
 
-///////////////////////////////////////////////
 
-///  TODO :: catch 3
+    /// Continues an observable sequence that is terminated by an exception of
+    /// the specified type with the observable sequence produced by the handler.
+    let catchWith handler source =
+        Observable.Catch( source,Func<_,_> handler )
 
-////////////////////////////////////////////////
+
+    /// Continues an observable sequence that is terminated by an exception with the next observable sequence.
+    let catchSeq (sources:seq<IObservable<'T>>) =
+        Observable.Catch(sources)
+
+
+    /// Continues an observable sequence that is terminated by an exception with the next observable sequence.
+    let catchArray (sources:IObservable<'T>[]) =
+        Observable.Catch(sources)
 
 
     /// Produces an enumerable sequence of consequtive (possibly empty) chunks of the source observable
     let chunkify<'Source> source : seq<IList<'Source>> = 
         Observable.Chunkify<'Source>( source )
 
-///////////////////////////////////////////////
 
-///  TODO :: collect 2
+    /// Produces an enumerable sequence of consecutive (possibly empty) chunks of the source sequence.
+    let collect source newCollector merge = 
+        Observable.Collect( source, Func<_> newCollector,Func<_,_,_> merge )
 
-////////////////////////////////////////////////
+
+    /// Produces an enumerable sequence that returns elements 
+    /// collected/aggregated from the source sequence between consecutive iterations.
+    let collect' getInitialCollector merge getNewCollector source =
+        Observable.Collect( source           , Func<_> getInitialCollector  , 
+                            Func<_,_,_> merge, Func<_,_> getNewCollector    )
+
+
     // #region CombineLatest Functions
 
     /// Merges the specified observable sequences into one observable sequence by 
@@ -372,7 +405,7 @@ module Observable =
 
     /// Concatenates all observable sequences within the sequence as long as
     /// the previous observable sequence terminated successfully 
-    let concatSeq (sources:seq<IObservable<'T>>) : IObservable<'T>=
+    let concatSeq (sources:seq<IObservable<'T>>) : IObservable<'T> =
         Observable.Concat(sources)
 
 
@@ -394,49 +427,64 @@ module Observable =
         Observable.Concat( sources )
 
 
-
-    /// Produces and enumerable sequence that returns elements collected/aggregated 
-    /// from the source sequence between consecutive iterations 
-    let collect  newCollector merge source = 
-        Observable.Collect(source, newCollector, merge )
-
-///////////////////////////////////////////////
-
-///  TODO :: collect
-
-////////////////////////////////////////////////
-
-
     /// Connects the observable wrapper to its source. All subscribed
     /// observers will recieve values from the underlying observable
     /// sequence as long as the connection is established.    
     /// ( publish an Observable to get a ConnectableObservable )
-    let connect ( source:Subjects.IConnectableObservable<_> )=    
+    let connect ( source:Subjects.IConnectableObservable<_> ) =    
         source.Connect()
 
-///////////////////////////////////////////////
 
-///  TODO :: contains 2
+    /// Determines whether an observable sequence contains a specified 
+    /// element by using the default equality comparer.
+    let contains value source =
+        Observable.Contains( source, value )
 
-////////////////////////////////////////////////
+
+    /// Determines whether an observable sequence contains a 
+    /// specified element by using a specified EqualityComparer
+    let containsCompare comparer value source =
+        Observable.Contains( source, value, comparer )
 
 
     /// Counts the elements
-    let count source = Observable.Count(source)
-
-///////////////////////////////////////////////
-
-///  TODO :: count
-
-////////////////////////////////////////////////
+    let count source = 
+        Observable.Count(source)
 
 
+    /// Returns an observable sequence containing an int that represents how many elements 
+    /// in the specified observable sequence satisfy a condition.
+    let countSatisfy predicate source = 
+        Observable.Count( source, predicate )
 
 
-///////////////////////////////////////////////
+    let create subscribe =
+        Observable.Create(Func<IObserver<'Result>,Action> subscribe)
 
-///  TODO :: Create 8
 
+    let create' subscribe =
+        Observable.Create(Func<IObserver<'Result>,IDisposable> subscribe)
+
+/////////////////////////////
+/// TODO Go back and check reference to make new async creation methods that are unified
+/// with F#'s async workflow
+
+//    let create'' subscribe =
+//        Observable.Create()
+//
+//    let create''' subscribe =
+//        Observable.Create
+//
+//    let create'''' subscribe =
+//        Observable.Create
+//    static member Create : subscribe:Func<IObserver<'TResult>,Action> -> IObservable<'TResult>
+//    static member Create : subscribeAsync:Func<IObserver<'TResult>,Threading.Tasks.Task<Action>> -> IObservable<'TResult>
+//    static member Create : subscribeAsync:Func<IObserver<'TResult>,Threading.CancellationToken,Threading.Tasks.Task<Action>> -> IObservable<'TResult>
+//    static member Create : subscribeAsync:Func<IObserver<'TResult>,Threading.Tasks.Task<IDisposable>> -> IObservable<'TResult>
+//    static member Create : subscribeAsync:Func<IObserver<'TResult>,Threading.CancellationToken,Threading.Tasks.Task<IDisposable>> -> IObservable<'TResult>
+//    static member Create : subscribeAsync:Func<IObserver<'TResult>,Threading.Tasks.Task> -> IObservable<'TResult>
+//    static member Create : subscribeAsync:Func<IObserver<'TResult>,Threading.CancellationToken,Threading.Tasks.Task> -> IObservable<'TResult>
+//    static member Create : subscribe:Func<IObserver<'TResult>,IDisposable> -> IObservable<'TResult>
 ////////////////////////////////////////////////------------------
 
 
@@ -446,40 +494,21 @@ module Observable =
         }
 
 
-///////////////////////////////////////////////
-
-///  TODO :: defaultIfEmpty 2
-
-////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: defer 2
-
-////////////////////////////////////////////////
-
-///////////////////////////////////////////////
-
-///  TODO :: defer async
-
-////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: delay 6
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: delaySubscription 4
-
-////////////////////////////////////////////////
+//    static member DefaultIfEmpty : source:IObservable<'TSource> * defaultValue:'TSource -> IObservable<'TSource>
+//    static member DefaultIfEmpty : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Defer : observableFactory:Func<IObservable<'TResult>> -> IObservable<'TResult>
+//    static member Defer : observableFactoryAsync:Func<Threading.Tasks.Task<IObservable<'TResult>>> -> IObservable<'TResult>
+//    static member DeferAsync : observableFactoryAsync:Func<Threading.CancellationToken,Threading.Tasks.Task<IObservable<'TResult>>> -> IObservable<'TResult>
+//    static member Delay : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
+//    static member Delay : source:IObservable<'TSource> * dueTime:DateTimeOffset -> IObservable<'TSource>
+//    static member Delay : source:IObservable<'TSource> * dueTime:DateTimeOffset * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Delay : source:IObservable<'TSource> * delayDurationSelector:Func<'TSource,IObservable<'TDelay>> -> IObservable<'TSource>
+//    static member Delay : source:IObservable<'TSource> * subscriptionDelay:IObservable<'TDelay> * delayDurationSelector:Func<'TSource,IObservable<'TDelay>> -> IObservable<'TSource>
+//    static member Delay : source:IObservable<'TSource> * dueTime:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member DelaySubscription : source:IObservable<'TSource> * dueTime:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member DelaySubscription : source:IObservable<'TSource> * dueTime:DateTimeOffset * scheduler:IScheduler -> IObservable<'TSource>
+//    static member DelaySubscription : source:IObservable<'TSource> * dueTime:DateTimeOffset -> IObservable<'TSource>
+//    static member DelaySubscription : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
 
 
 
@@ -495,43 +524,26 @@ module Observable =
         Observable.Distinct(source)
 
 
-///////////////////////////////////////////////
-
-///  TODO :: distinct 3
-
-////////////////////////////////////////////////
+//    static member Distinct : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<'TSource>
+//    static member Distinct : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<'TSource>
+//    static member Distinct : source:IObservable<'TSource> * comparer:Collections.Generic.IEqualityComparer<'TSource> -> IObservable<'TSource>
+//    static member Distinct : source:IObservable<'TSource> -> IObservable<'TSource>
 
     /// Returns an observable sequence that only contains distinct contiguous elements 
     let distinctUntilChanged source = 
         Observable.DistinctUntilChanged(source)
 
-///////////////////////////////////////////////
-
-///  TODO :: distinctUntilChanged 3
-
-////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: doWhile
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: elementat
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: elementOrDefault
-
-////////////////////////////////////////////////
+//    static member DistinctUntilChanged : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member DistinctUntilChanged : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<'TSource>
+//    static member DistinctUntilChanged : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<'TSource>
+//    static member Do : source:IObservable<'TSource> * onNext:Action<'TSource> * onError:Action<exn> * onCompleted:Action -> IObservable<'TSource>
+//    static member Do : source:IObservable<'TSource> * onNext:Action<'TSource> * onError:Action<exn> -> IObservable<'TSource>
+//    static member Do : source:IObservable<'TSource> * onNext:Action<'TSource> * onCompleted:Action -> IObservable<'TSource>
+//    static member Do : source:IObservable<'TSource> * observer:IObserver<'TSource> -> IObservable<'TSource>
+//    static member Do : source:IObservable<'TSource> * onNext:Action<'TSource> -> IObservable<'TSource>
+//    static member DoWhile : source:IObservable<'TSource> * condition:Func<bool> -> IObservable<'TSource>
+//    static member ElementAt : source:IObservable<'TSource> * index:int -> IObservable<'TSource>
+//    static member ElementAtOrDefault : source:IObservable<'TSource> * index:int -> IObservable<'TSource>
 
 
     /// Returns an empty observable
@@ -588,22 +600,18 @@ module Observable =
     let firstAsyncIf predicate (source:IObservable<'T>) =
         source.FirstAsync( predicate )
 
-
-///////////////////////////////////////////////
-
-///  TODO :: firstOrDefault 2
-
-////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: first or default async 2
-
-////////////////////////////////////////////////
-
-
+//
+//    static member First : source:IObservable<'TSource> -> 'TSource
+//    static member First : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> 'TSource
+//
+//
+//    static member FirstAsync : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
+//    static member FirstAsync : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member FirstOrDefault : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> 'TSource
+//    static member FirstOrDefault : source:IObservable<'TSource> -> 'TSource
+//    static member FirstOrDefaultAsync : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
+//    static member FirstOrDefaultAsync : source:IObservable<'TSource> -> IObservable<'TSource>
+//
 
 
     /// Applies an accumulator function over an observable sequence, returning the 
@@ -620,30 +628,50 @@ module Observable =
         Observable.Aggregate(source, seed,Func<_,_,_> accumulator,Func<_,_>  map )
 
 
-///////////////////////////////////////////////
+//    static member For : source:Collections.Generic.IEnumerable<'TSource> * resultSelector:Func<'TSource,IObservable<'TResult>> -> IObservable<'TResult>
+//    static member ForEach : source:IObservable<'TSource> * onNext:Action<'TSource> -> unit
+//    static member ForEach : source:IObservable<'TSource> * onNext:Action<'TSource,int> -> unit
+//    static member ForEachAsync : source:IObservable<'TSource> * onNext:Action<'TSource,int> * cancellationToken:Threading.CancellationToken -> Threading.Tasks.Task
+//    static member ForEachAsync : source:IObservable<'TSource> * onNext:Action<'TSource,int> -> Threading.Tasks.Task
+//    static member ForEachAsync : source:IObservable<'TSource> * onNext:Action<'TSource> * cancellationToken:Threading.CancellationToken -> Threading.Tasks.Task
+//    static member ForEachAsync : source:IObservable<'TSource> * onNext:Action<'TSource> -> Threading.Tasks.Task
+//    static member FromAsync : functionAsync:Func<Threading.Tasks.Task<'TResult>> -> IObservable<'TResult>
+//    static member FromAsync : functionAsync:Func<Threading.CancellationToken,Threading.Tasks.Task<'TResult>> -> IObservable<'TResult>
+//    static member FromAsync : actionAsync:Func<Threading.Tasks.Task> -> IObservable<Unit>
+//    static member FromAsync : actionAsync:Func<Threading.CancellationToken,Threading.Tasks.Task> -> IObservable<Unit>
 
-///  TODO :: for
 
-////////////////////////////////////////////////
-
-///////////////////////////////////////////////
-
-///  TODO :: forEach 2
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: FromAsync 4
-
-////////////////////////////////////////////////
-
-///////////////////////////////////////////////
-
-///  TODO :: FromAsyncPattern 30
-
-////////////////////////////////////////////////
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,AsyncCallback,obj,IAsyncResult> * end:Func<IAsyncResult,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,IObservable<'TResult>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,IObservable<Unit>>
+//    static member FromAsyncPattern : begin:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,AsyncCallback,obj,IAsyncResult> * end:Action<IAsyncResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,IObservable<Unit>>
+//////////////////////////////////////////////////
 
     let fromEvent<'EventArgs, 'Delegate when 'EventArgs:> EventArgs>
             ( conversion   : ('EventArgs -> unit ) -> 'Delegate )
@@ -658,11 +686,14 @@ module Observable =
                 { new IDisposable with member this.Dispose() = remove () }
         }
 
-///////////////////////////////////////////////
-
-///  TODO :: fromEVent 7
-
-////////////////////////////////////////////////
+//    static member FromEvent : addHandler:Action<Action> * removeHandler:Action<Action> * scheduler:IScheduler -> IObservable<Unit>
+//    static member FromEvent : addHandler:Action<Action> * removeHandler:Action<Action> -> IObservable<Unit>
+//    static member FromEvent : addHandler:Action<Action<'TEventArgs>> * removeHandler:Action<Action<'TEventArgs>> -> IObservable<'TEventArgs>
+//    static member FromEvent : addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> * scheduler:IScheduler -> IObservable<'TEventArgs>
+//    static member FromEvent : addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> -> IObservable<'TEventArgs>
+//    static member FromEvent : conversion:Func<Action<'TEventArgs>,'TDelegate> * addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> * scheduler:IScheduler -> IObservable<'TEventArgs>
+//    static member FromEvent : conversion:Func<Action<'TEventArgs>,'TDelegate> * addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> -> IObservable<'TEventArgs>
+//    static member FromEvent : addHandler:Action<Action<'TEventArgs>> * removeHandler:Action<Action<'TEventArgs>> * scheduler:IScheduler -> IObservable<'TEventArgs>
 
     let fromEventHandler<'EventArgs when 'EventArgs:> EventArgs>
         ( addHandler    : EventHandler<_> -> unit )
@@ -679,39 +710,60 @@ module Observable =
     /// Generates an observable from an IEvent<_> as an EventPattern.
     let fromEventPattern<'T> eventName  (target:obj) =
         Observable.FromEventPattern( target, eventName )
-
-///////////////////////////////////////////////
-
-///  TODO :: fromEventPattern 21
-
-////////////////////////////////////////////////
+//
+//    static member FromEventPattern : addHandler:Action<EventHandler> * removeHandler:Action<EventHandler> -> IObservable<EventPattern<EventArgs>>
+//    static member FromEventPattern : type:Type * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<EventArgs>>
+//    static member FromEventPattern : addHandler:Action<EventHandler> * removeHandler:Action<EventHandler> * scheduler:IScheduler -> IObservable<EventPattern<EventArgs>>
+//    static member FromEventPattern : addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : target:obj * eventName:string -> IObservable<EventPattern<EventArgs>>
+//    static member FromEventPattern : conversion:Func<EventHandler<'TEventArgs>,'TDelegate> * addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : type:Type * eventName:string -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : type:Type * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : type:Type * eventName:string -> IObservable<EventPattern<'TSender,'TEventArgs>>
+//    static member FromEventPattern : type:Type * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<'TSender,'TEventArgs>>
+//    static member FromEventPattern : type:Type * eventName:string -> IObservable<EventPattern<EventArgs>>
+//    static member FromEventPattern : target:obj * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<'TSender,'TEventArgs>>
+//    static member FromEventPattern : target:obj * eventName:string -> IObservable<EventPattern<'TSender,'TEventArgs>>
+//    static member FromEventPattern : addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> * scheduler:IScheduler -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : target:obj * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : target:obj * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<EventArgs>>
+//    static member FromEventPattern : addHandler:Action<EventHandler<'TEventArgs>> * removeHandler:Action<EventHandler<'TEventArgs>> * scheduler:IScheduler -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : addHandler:Action<EventHandler<'TEventArgs>> * removeHandler:Action<EventHandler<'TEventArgs>> -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> * scheduler:IScheduler -> IObservable<EventPattern<'TSender,'TEventArgs>>
+//    static member FromEventPattern : addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> -> IObservable<EventPattern<'TSender,'TEventArgs>>
+//    static member FromEventPattern : conversion:Func<EventHandler<'TEventArgs>,'TDelegate> * addHandler:Action<'TDelegate> * removeHandler:Action<'TDelegate> * scheduler:IScheduler -> IObservable<EventPattern<'TEventArgs>>
+//    static member FromEventPattern : target:obj * eventName:string -> IObservable<EventPattern<'TEventArgs>>
 
     let generate initialstate condition iterator selector = 
         Observable.Generate( initialstate, condition, iterator, selector )
 
-///////////////////////////////////////////////
-
-///  TODO :: generate 5
-
-////////////////////////////////////////////////
-
-
+//    static member Generate : initialState:'TState * condition:Func<'TState,bool> * iterate:Func<'TState,'TState> * resultSelector:Func<'TState,'TResult> * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Generate : initialState:'TState * condition:Func<'TState,bool> * iterate:Func<'TState,'TState> * resultSelector:Func<'TState,'TResult> * timeSelector:Func<'TState,DateTimeOffset> * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Generate : initialState:'TState * condition:Func<'TState,bool> * iterate:Func<'TState,'TState> * resultSelector:Func<'TState,'TResult> -> IObservable<'TResult>
+//    static member Generate : initialState:'TState * condition:Func<'TState,bool> * iterate:Func<'TState,'TState> * resultSelector:Func<'TState,'TResult> * timeSelector:Func<'TState,TimeSpan> * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Generate : initialState:'TState * condition:Func<'TState,bool> * iterate:Func<'TState,'TState> * resultSelector:Func<'TState,'TResult> * timeSelector:Func<'TState,TimeSpan> -> IObservable<'TResult>
+//    static member Generate : initialState:'TState * condition:Func<'TState,bool> * iterate:Func<'TState,'TState> * resultSelector:Func<'TState,'TResult> * timeSelector:Func<'TState,DateTimeOffset> -> IObservable<'TResult>
+//    static member GetEnumerator : source:IObservable<'TSource> -> Collections.Generic.IEnumerator<'TSource>
 
     let groupBy source keySelector = 
         Observable.GroupBy( source, keySelector )
 
-///////////////////////////////////////////////
-
-///  TODO :: groupBy 7
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: groupbyuntil 8
-
-////////////////////////////////////////////////
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * capacity:int * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * capacity:int -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * capacity:int * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * capacity:int -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * durationSelector:Func<IGroupedObservable<'TKey,'TElement>,IObservable<'TDuration>> * capacity:int -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * durationSelector:Func<IGroupedObservable<'TKey,'TSource>,IObservable<'TDuration>> * capacity:int * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * durationSelector:Func<IGroupedObservable<'TKey,'TSource>,IObservable<'TDuration>> * capacity:int -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * durationSelector:Func<IGroupedObservable<'TKey,'TSource>,IObservable<'TDuration>> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * durationSelector:Func<IGroupedObservable<'TKey,'TElement>,IObservable<'TDuration>> -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * durationSelector:Func<IGroupedObservable<'TKey,'TSource>,IObservable<'TDuration>> -> IObservable<IGroupedObservable<'TKey,'TSource>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * durationSelector:Func<IGroupedObservable<'TKey,'TElement>,IObservable<'TDuration>> * capacity:int * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TElement>>
+//    static member GroupByUntil : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * durationSelector:Func<IGroupedObservable<'TKey,'TElement>,IObservable<'TDuration>> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<IGroupedObservable<'TKey,'TElement>>
 
     /// Correlates the elements of two sequences based on overlapping 
     /// durations and groups the results
@@ -755,31 +807,15 @@ module Observable =
         Observable.When( plans )
 
 
-///////////////////////////////////////////////
+//    static member Last : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> 'TSource
+//    static member Last : source:IObservable<'TSource> -> 'TSource
 
-///  TODO :: last 2
-
-////////////////////////////////////////////////
-
-///////////////////////////////////////////////
-
-///  TODO :: last async 2
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: lastor default 2
-
-////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: lastordefault async 2
-
+//    static member LastAsync : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member LastAsync : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
+//    static member LastOrDefault : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> 'TSource
+//    static member LastOrDefault : source:IObservable<'TSource> -> 'TSource
+//    static member LastOrDefaultAsync : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member LastOrDefaultAsync : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
 ////////////////////////////////////////////////
 
 
@@ -793,16 +829,15 @@ module Observable =
         Observable.LongCount(source)
 
 
-///////////////////////////////////////////////
-
-///  TODO :: longcount
-
-////////////////////////////////////////////////
-
+    /// Returns an observable sequence containing an int that represents how many elements 
+    /// in the specified observable sequence satisfy a condition.
+    let longCountSatisfy predicate source = 
+        Observable.LongCount(source, predicate)    
 
 
     /// Maps the given observable with the given function
     let map f source = Observable.Select(source, Func<_,_>(f))   
+
 
     /// Maps the given observable with the given function and the 
     /// index of the element
@@ -825,20 +860,43 @@ module Observable =
         Observable.Materialize( source )
 
 
-
-///////////////////////////////////////////////
-
-///  TODO :: max 23
-
-////////////////////////////////////////////////
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> * comparer:Collections.Generic.IComparer<'TResult> -> IObservable<'TResult>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> -> IObservable<'TResult>
 
 
-///////////////////////////////////////////////
+//        static member Max : source:IObservable<'TSource> * comparer:Collections.Generic.IComparer<'TSource> -> IObservable<'TSource>
+//    static member Max : source:IObservable<'TSource> -> IObservable<'TSource>
 
-///  TODO :: maxby 2
+//
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,decimal> -> IObservable<decimal>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,int> -> IObservable<int>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int64>> -> IObservable<Nullable<int64>>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int>> -> IObservable<Nullable<int>>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float32>> -> IObservable<Nullable<float32>>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,int64> -> IObservable<int64>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,float> -> IObservable<float>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> * comparer:Collections.Generic.IComparer<'TResult> -> IObservable<'TResult>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> -> IObservable<'TResult>
+//    static member Max : source:IObservable<Nullable<int64>> -> IObservable<Nullable<int64>>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,float32> -> IObservable<float32>
+//    static member Max : source:IObservable<Nullable<int>> -> IObservable<Nullable<int>>
+//    static member Max : source:IObservable<Nullable<float32>> -> IObservable<Nullable<float32>>
+//    static member Max : source:IObservable<Nullable<float>> -> IObservable<Nullable<float>>
+//    static member Max : source:IObservable<int64> -> IObservable<int64>
+//    static member Max : source:IObservable<int> -> IObservable<int>
+//    static member Max : source:IObservable<decimal> -> IObservable<decimal>
+//    static member Max : source:IObservable<float32> -> IObservable<float32>
+//    static member Max : source:IObservable<float> -> IObservable<float>
+//    static member Max : source:IObservable<'TSource> * comparer:Collections.Generic.IComparer<'TSource> -> IObservable<'TSource>
+//    static member Max : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Max : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float>> -> IObservable<Nullable<float>>
 
-////////////////////////////////////////////////
-    
+
+//        static member MaxBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<Collections.Generic.IList<'TSource>>
+//    static member MaxBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IComparer<'TKey> -> IObservable<Collections.Generic.IList<'TSource>>
+
+
     
     /// Merges the two observables
     let merge (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Merge(first, second)
@@ -900,32 +958,48 @@ module Observable =
         Observable.Merge(sources)
 
 
-
-
-
-
-
-
-
-
-
-    /// TODO IMPLEMENT 19 OVERLOADS of MAX
     let maxOf (source:IObservable<'T>) = 
         Observable.Max( source )
 
-///////////////////////////////////////////////
-
-///  TODO :: min 24
-
-////////////////////////////////////////////////
 
 
 
-///////////////////////////////////////////////
 
-///  TODO :: minby 2
+//
+//        static member Min : source:IObservable<'TSource> * selector:Func<'TSource,decimal> -> IObservable<decimal>
+//
+//            static member Min : source:IObservable<'TSource> * comparer:Collections.Generic.IComparer<'TSource> -> IObservable<'TSource>
+//        // Min : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> -> IObservable<'TResult>
+//           static member Min : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,decimal> -> IObservable<decimal>
+//    static member Min : source:IObservable<Nullable<int>> -> IObservable<Nullable<int>>
+//    static member Min : source:IObservable<Nullable<float32>> -> IObservable<Nullable<float32>>
+//    static member Min : source:IObservable<Nullable<float>> -> IObservable<Nullable<float>>
+//    static member Min : source:IObservable<int64> -> IObservable<int64>
+//    static member Min : source:IObservable<int> -> IObservable<int>
+//    static member Min : source:IObservable<decimal> -> IObservable<decimal>
+//    static member Min : source:IObservable<float32> -> IObservable<float32>
+//    static member Min : source:IObservable<float> -> IObservable<float>
+//    static member Min : source:IObservable<'TSource> * comparer:Collections.Generic.IComparer<'TSource> -> IObservable<'TSource>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> -> IObservable<'TResult>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,'TResult> * comparer:Collections.Generic.IComparer<'TResult> -> IObservable<'TResult>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,float> -> IObservable<float>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,float32> -> IObservable<float32>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,int> -> IObservable<int>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,int64> -> IObservable<int64>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float>> -> IObservable<Nullable<float>>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float32>> -> IObservable<Nullable<float32>>
+//    static member Min : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int>> -> IObservable<Nullable<int>>
+//    static member Min : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int64>> -> IObservable<Nullable<int64>>
+//    static member Min : source:IObservable<Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    static member Min : source:IObservable<Nullable<int64>> -> IObservable<Nullable<int64>>
 
-////////////////////////////////////////////////
+
+
+//    static member MinBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<Collections.Generic.IList<'TSource>>
+//    static member MinBy : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IComparer<'TKey> -> IObservable<Collections.Generic.IList<'TSource>>
 
     /// Returns an enumerable sequence whose sequence whose enumeration returns the 
     /// most recently observed element in the source observable sequence, using 
@@ -933,20 +1007,35 @@ module Observable =
     let mostRecent initialVal source = 
         Observable.MostRecent( source, initialVal )
 
-///////////////////////////////////////////////
 
-///  TODO :: multicast 2
+    /// Multicasts the source sequence notifications through the specified subject to 
+    /// the resulting connectable observable. Upon connection of the connectable 
+    /// observable, the subject is subscribed to the source exactly one, and messages
+    /// are forwarded to the observers registered with the connectable observable. 
+    /// For specializations with fixed subject types, see Publish, PublishLast, and Replay.
+    let multicast subject source =
+        Observable.Multicast(source, subject)
 
-////////////////////////////////////////////////
+
+    /// Multicasts the source sequence notifications through an instantiated subject into
+    /// all uses of the sequence within a selector function. Each subscription to the 
+    /// resulting sequence causes a separate multicast invocation, exposing the sequence
+    /// resulting from the selector function's invocation. For specializations with fixed
+    /// subject types, see Publish, PublishLast, and Replay.
+    let multicastMap subjectSelector selector source  =
+        Observable.Multicast(source,subjectSelector, selector)
 
 
+    /// Returns a non-terminating observable sequence, which can 
+    /// be used to denote an infinite duration (e.g. when using reactive joins).
+    let never() =
+        Observable.Never()
 
-///////////////////////////////////////////////
 
-///  TODO :: never 2
-
-////////////////////////////////////////////////
-
+    /// Returns a non-terminating observable sequence, which can be 
+    /// used to denote an infinite duration (e.g. when using reactive joins).
+    let neverWitness( witness ) =
+        Observable.Never( witness )
 
 
     /// Returns an observable sequence whose enumeration blocks until the next
@@ -956,7 +1045,6 @@ module Observable =
     let next source = 
         Observable.Next( source ) 
  
-
 
     /// Returns the sequence as an observable
     let ofSeq<'Item>(items:'Item seq) : IObservable<'Item> =
@@ -968,39 +1056,38 @@ module Observable =
                     {   new IDisposable with member __.Dispose() = ()   }
         }
 
-///////////////////////////////////////////////
 
-///  TODO :: observeOn 2
+    /// Wraps the source sequence in order to run its observer callbacks on the specified scheduler.
+    let observeOn (scheduler:Concurrency.IScheduler) source =
+        Observable.ObserveOn( source, scheduler )
 
-////////////////////////////////////////////////
+
+    /// Wraps the source sequence in order to run its observer callbacks 
+    /// on the specified synchronization context.
+    let observeOnContext (context:SynchronizationContext) source =
+        Observable.ObserveOn( source, context )
+
 
     /// Filters the elements of an observable sequence based on the specified type
     let ofType source = 
         Observable.OfType( source )
-        
- 
-
-
 
 
     let onErrorResumeNext sources : IObservable<'Source> = 
         Observable.OnErrorResumeNext(sources)
 
-///////////////////////////////////////////////
 
-///  TODO ::  onerrorresumeNext 2
-
-////////////////////////////////////////////////
-
-
-
+//    static member OnErrorResumeNext : first:IObservable<'TSource> * second:IObservable<'TSource> -> IObservable<'TSource>
+//    static member OnErrorResumeNext : sources:IObservable<'TSource> [] -> IObservable<'TSource>
+//    static member OnErrorResumeNext : sources:Collections.Generic.IEnumerable<IObservable<'TSource>> -> IObservable<'TSource>
+//
 
     let pairwise (source:IObservable<'a>) : IObservable<'a*'a> = 
         Observable.pairwise( source )
 
 
-    let partition predicate t = 
-        Observable.partition( predicate t )
+    let partition predicate (source:IObservable<'T>) = 
+        Observable.partition( predicate source )
 
 
 
@@ -1012,8 +1099,6 @@ module Observable =
 
     /// Invokes the finally action after source observable sequence terminates normally or by an exception.
     let performFinally f source = Observable.Finally(source, Action f)
-
-
 
 
     /// Returns a connectable observable sequence (IConnectableObsevable) that shares
@@ -1065,16 +1150,13 @@ module Observable =
         Observable.PublishLast( source , Func<IObservable<'Source>,IObservable<'Result>> map )
 
 
-
     /// Creates a range as an observable
     let range start count = Observable.Range(start, count)
 
-    
-///////////////////////////////////////////////
 
-///  TODO :: range 1
-
-////////////////////////////////////////////////
+    /// Generates an observable sequence of integer nunbers whithin a specified range 
+    /// using the specified scheduler to send out observer messages
+    let rangeScheduled start count scheduler  = Observable.Range(start, count, scheduler )
 
 
     /// Reduces the observable
@@ -1088,43 +1170,40 @@ module Observable =
         Observable.RefCount ( source )   
 
 
- 
-///////////////////////////////////////////////
+// 
+//    static member Repeat : value:'TResult * repeatCount:int -> IObservable<'TResult>
+//    static member Repeat : value:'TResult * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Repeat : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Repeat : source:IObservable<'TSource> * repeatCount:int -> IObservable<'TSource>
+//    static member Repeat : value:'TResult -> IObservable<'TResult>
+//    static member Repeat : value:'TResult * repeatCount:int * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * bufferSize:int * window:TimeSpan -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * bufferSize:int * scheduler:IScheduler -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> * bufferSize:int * window:TimeSpan -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * bufferSize:int * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * bufferSize:int * window:TimeSpan * scheduler:IScheduler -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * bufferSize:int * window:TimeSpan * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * window:TimeSpan * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * window:TimeSpan * scheduler:IScheduler -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * window:TimeSpan -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * window:TimeSpan -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * scheduler:IScheduler -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> -> Subjects.IConnectableObservable<'TSource>
+//    static member Replay : source:IObservable<'TSource> * selector:Func<IObservable<'TSource>,IObservable<'TResult>> * bufferSize:int -> IObservable<'TResult>
+//    static member Replay : source:IObservable<'TSource> * bufferSize:int -> Subjects.IConnectableObservable<'TSource>
 
-///  TODO :: repeat 6
 
-////////////////////////////////////////////////
-
-
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: replay 16
-
-////////////////////////////////////////////////
-
-
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: retry  2
-
-////////////////////////////////////////////////
-
+//
+//    static member Retry : source:IObservable<'TSource> * retryCount:int -> IObservable<'TSource>
+//    static member Retry : source:IObservable<'TSource> -> IObservable<'TSource>
 
         
-
-
-///////////////////////////////////////////////
-
-///  TODO :: return 2
-
-////////////////////////////////////////////////
-
+//
+//
+//    static member Return : value:'TResult -> IObservable<'TResult>
+//    static member Return : value:'TResult * scheduler:IScheduler -> IObservable<'TResult>
 
     let result x : IObservable<_>=
         { new IObservable<_> with
@@ -1143,14 +1222,10 @@ module Observable =
     let sample (interval: TimeSpan) source =
         Observable.Sample(source, interval)
 
-        
-///////////////////////////////////////////////
-
-///  TODO :: sample 2
-
-////////////////////////////////////////////////
-
-
+//        
+//    static member Sample : source:IObservable<'TSource> * interval:TimeSpan -> IObservable<'TSource>
+//    static member Sample : source:IObservable<'TSource> * interval:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Sample : source:IObservable<'TSource> * sampler:IObservable<'TSample> -> IObservable<'TSource>
 
 
 
@@ -1161,61 +1236,104 @@ module Observable =
     let scan (collector:'a->'b->'a) state source =
         Observable.Scan(source,  state, Func<'a,'b,'a>collector )
 
-        
-///////////////////////////////////////////////
+//    static member Scan : source:IObservable<'TSource> * accumulator:Func<'TSource,'TSource,'TSource> -> IObservable<'TSource>
+//    static member Scan : source:IObservable<'TSource> * seed:'TAccumulate * accumulator:Func<'TAccumulate,'TSource,'TAccumulate> -> IObservable<'TAccumulate>
 
-///  TODO :: scan overload
-
-////////////////////////////////////////////////
-
+    let selectMany selector source = 
+        Observable.SelectMany(source,Func<'Source,int,seq<'Result>> selector )
 
 
+    let selectMany1 selector source = 
+        Observable.SelectMany(source,Func<'Sourec,int,IObservable<'Result>> selector )
 
-///////////////////////////////////////////////
+    let selectMany2 selector source = 
+        Observable.SelectMany(source,Func<'Source,int,CancellationToken,Tasks.Task<'Result>> selector)
 
-///  TODO :: select many 19
-
-////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: sequence equal 4
-
-////////////////////////////////////////////////
+    let selectMany3 selector source = 
+        Observable.SelectMany(source,Func<'Source,int,Tasks.Task<'Result>> selector)
 
 
+    let selectMany4 selector source = 
+        Observable.SelectMany(source, Func<'Source,seq<'Result>> selector)
 
 
+    let selectMany5 selector source = 
+        Observable.SelectMany(source, Func<'S,IObservable<'R>> selector)
+
+    let selectMany6 selector source = 
+        Observable.SelectMany(source, Func<'S,CancellationToken,Tasks.Task<'R>> selector )
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( taskSelector:Func<'TSource,Threading.CancellationToken,Threading.Tasks.Task<'TTaskResult>> )( resultSelector:Func<'TSource,'TTaskResult,'TResult> ): IObservable<'TResult> =
+//        Observable.SelectMany    ( source:IObservable<'TSource>, Func<'TSource,Threading.CancellationToken,Threading.Tasks.Task<'TTaskResult>> taskSelector, resultSelector:Func<'TSource,'TTaskResult,'TResult> ): IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( taskSelector:Func<'TSource,int,Threading.Tasks.Task<'TTaskResult>>)( resultSelector:Func<'TSource,int,'TTaskResult,'TResult> ) : IObservable<'TResult> =
+//        Observable.SelectMany    ( source:IObservable<'TSource> )( taskSelector:Func<'TSource,int,Threading.Tasks.Task<'TTaskResult>>)( resultSelector:Func<'TSource,int,'TTaskResult,'TResult> ) : IObservable<'TResult> =
+//
+
+//    let selectMany    ( source:IObservable<'TSource> )( taskSelector:Func<'TSource,Threading.Tasks.Task<'TTaskResult>> * resultSelector:Func<'TSource,'TTaskResult,'TResult> ) IObservable<'TResult> =
+//        Observable.SelectMany    ( source:IObservable<'TSource> )( taskSelector:Func<'TSource,Threading.Tasks.Task<'TTaskResult>> * resultSelector:Func<'TSource,'TTaskResult,'TResult> ) IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( collectionSelector:Func<'TSource,int,IObservable<'TCollection>> * resultSelector:Func<'TSource,int,'TCollection,int,'TResult> ) : IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( collectionSelector:Func<'TSource,int,IObservable<'TCollection>> * resultSelector:Func<'TSource,int,'TCollection,int,'TResult> ) : IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( onNext:Func<'TSource,int,IObservable<'TResult>> * onError:Func<exn,IObservable<'TResult>> * onCompleted:Func<IObservable<'TResult>> ) : IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( onNext:Func<'TSource,int,IObservable<'TResult>> * onError:Func<exn,IObservable<'TResult>> * onCompleted:Func<IObservable<'TResult>> ) : IObservable<'TResult> =
 
 
-///////////////////////////////////////////////
+//    let selectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,Threading.CancellationToken,Threading.Tasks.Task<'TResult>>): IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( selector:Func<'TSource,Threading.CancellationToken,Threading.Tasks.Task<'TResult>>): IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,int,Threading.CancellationToken,Threading.Tasks.Task<'TResult>>): IObservable<'TResult> =
+//        Observable.SelectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,int,Threading.CancellationToken,Threading.Tasks.Task<'TResult>>): IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( other:IObservable<'TOther> ): IObservable<'TOther> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( other:IObservable<'TOther> ): IObservable<'TOther> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,IObservable<'TResult>>): IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( selector:Func<'TSource,IObservable<'TResult>>): IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,int,IObservable<'TResult>>) : IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( selector:Func<'TSource,int,IObservable<'TResult>>) : IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,Threading.Tasks.Task<'TResult>> ) : IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( selector:Func<'TSource,Threading.Tasks.Task<'TResult>> ) : IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( selector:Func<'TSource,int,Threading.Tasks.Task<'TResult>>) : IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( selector:Func<'TSource,int,Threading.Tasks.Task<'TResult>>) : IObservable<'TResult> =
+//
+//
+//    let selectMany    ( source:IObservable<'TSource> )( collectionSelector:Func<'TSource,IObservable<'TCollection>> )( resultSelector:Func<'TSource,'TCollection,'TResult>) : IObservable<'TResult> =
+//        Observable.SelectMany     ( source:IObservable<'TSource> )( collectionSelector:Func<'TSource,IObservable<'TCollection>> )( resultSelector:Func<'TSource,'TCollection,'TResult>) : IObservable<'TResult> =
 
-///  TODO :: single 2
 
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: singleasync 2
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: singleordefault 2
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: singleOrDefaultAsync 2
-
-////////////////////////////////////////////////
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:IObservable<'TSource> ) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:IObservable<'TSource> ) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:Collections.Generic.IEnumerable<'TSource> )( comparer:Collections.Generic.IEqualityComparer<'TSource> ) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:Collections.Generic.IEnumerable<'TSource> )( comparer:Collections.Generic.IEqualityComparer<'TSource> ) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:IObservable<'TSource> )( comparer:Collections.Generic.IEqualityComparer<'TSource>) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:IObservable<'TSource> )( comparer:Collections.Generic.IEqualityComparer<'TSource>) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:Collections.Generic.IEnumerable<'TSource>) : IObservable<bool> =
+//    let sequenceEqual ( first:IObservable<'TSource>  )( second:Collections.Generic.IEnumerable<'TSource>) : IObservable<bool> =
+//
+//
+//    let single               ( source:IObservable<'TSource>) (predicate:Func<'TSource,bool> ) : 'TSource =
+//    let single               ( source:IObservable<'TSource>) : 'TSource =
+//    let singleAsync          ( source:IObservable<'TSource>) : IObservable<'TSource> =
+//    let singleAsync          ( source:IObservable<'TSource>) (predicate:Func<'TSource,bool>): IObservable<'TSource> =
+//    let singleOrDefault      ( source:IObservable<'TSource>) : 'TSource =
+//    let singleOrDefault      ( source:IObservable<'TSource>) (predicate:Func<'TSource,bool>) : 'TSource =
+//    let singleOrDefaultAsync ( source:IObservable<'TSource>) : IObservable<'TSource> =
+//    let singleOrDefaultAsync ( source:IObservable<'TSource>)( predicate:Func<'TSource,bool> ): IObservable<'TSource> =
 
 
 
@@ -1224,11 +1342,9 @@ module Observable =
         Observable.If( Func<bool> condition, thenSource )
 
 
-
     let selectIfElse condition ( elseSource : IObservable<'Result>) 
                                ( thenSource : IObservable<'Result>) =
         Observable.If( Func<bool> condition, thenSource, elseSource )
-
 
 
     let selectIfScheduler condition ( scheduler  : Concurrency.IScheduler) 
@@ -1239,30 +1355,19 @@ module Observable =
     let skip (n: int) source = Observable.Skip(source, n)
   
   
-///////////////////////////////////////////////
-
-///  TODO ::skip 2
-
-////////////////////////////////////////////////
-
-
-  
-///////////////////////////////////////////////
-
-///  TODO :: skip last 3
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: skip until 6
-
-////////////////////////////////////////////////
-
-
-  
-  
+//    static member Skip : source:IObservable<'TSource> * count:int -> IObservable<'TSource>
+//    static member Skip : source:IObservable<'TSource> * duration:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Skip : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<'TSource>
+//    static member SkipLast : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<'TSource>
+//    static member SkipLast : source:IObservable<'TSource> * count:int -> IObservable<'TSource>
+//    static member SkipLast : source:IObservable<'TSource> * duration:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member SkipUntil : source:IObservable<'TSource> * other:IObservable<'TOther> -> IObservable<'TSource>
+//    static member SkipUntil : source:IObservable<'TSource> * startTime:DateTimeOffset -> IObservable<'TSource>
+//    static member SkipUntil : source:IObservable<'TSource> * startTime:DateTimeOffset * scheduler:IScheduler -> IObservable<'TSource>
+//    static member SkipWhile : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
+//    static member SkipWhile : source:IObservable<'TSource> * predicate:Func<'TSource,int,bool> -> IObservable<'TSource>
+//  
+//  
      
 
     /// Skips elements while the predicate is satisfied
@@ -1270,34 +1375,27 @@ module Observable =
  
 
  
-///////////////////////////////////////////////
+//    static member Start : function:Func<'TResult> -> IObservable<'TResult>
+//    static member Start : function:Func<'TResult> * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Start : action:Action -> IObservable<Unit>
+//    static member Start : action:Action * scheduler:IScheduler -> IObservable<Unit>
 
-///  TODO :: Start 4
-
-////////////////////////////////////////////////
-
-
-
-
- 
-///////////////////////////////////////////////
-
-///  TODO :: start async 4
-
-////////////////////////////////////////////////
+//    static member StartAsync : functionAsync:Func<Threading.Tasks.Task<'TResult>> -> IObservable<'TResult>
+//    static member StartAsync : functionAsync:Func<Threading.CancellationToken,Threading.Tasks.Task<'TResult>> -> IObservable<'TResult>
+//    static member StartAsync : actionAsync:Func<Threading.Tasks.Task> -> IObservable<Unit>
+//    static member StartAsync : actionAsync:Func<Threading.CancellationToken,Threading.Tasks.Task> -> IObservable<Unit>
 
 
 
 
     let startWith source param = 
         Observable.StartWith( source, param )
-        
-///////////////////////////////////////////////
-
-///  TODO :: startwith 3
-
-////////////////////////////////////////////////
-
+//        
+//    static member StartWith : source:IObservable<'TSource> * values:Collections.Generic.IEnumerable<'TSource> -> IObservable<'TSource>
+//    static member StartWith : source:IObservable<'TSource> * scheduler:IScheduler * values:'TSource [] -> IObservable<'TSource>
+//    static member StartWith : source:IObservable<'TSource> * values:'TSource [] -> IObservable<'TSource>
+//    static member StartWith : source:IObservable<'TSource> * scheduler:IScheduler * values:Collections.Generic.IEnumerable<'TSource> -> IObservable<'TSource>
+//
 
     /// Subscribes to the Observable with a next fuction.
     let subscribe(onNext: 'T -> unit) (observable: IObservable<'T>) =
@@ -1327,20 +1425,36 @@ module Observable =
     let subscribeObserver observer (observable: IObservable<'T>) =
         observable.Subscribe observer
 
-///////////////////////////////////////////////
 
-///  TODO :: subscribeOn 2
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: sum 20
-
-////////////////////////////////////////////////
+//    static member SubscribeOn : source:IObservable<'TSource> * scheduler:IScheduler -> IObservable<'TSource>
+//    static member SubscribeOn : source:IObservable<'TSource> * context:Threading.SynchronizationContext -> IObservable<'TSource>
+//
+//
+//
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,int> -> IObservable<int>
+//    static member Sum : source:IObservable<int64> -> IObservable<int64>
 
 
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,int> -> IObservable<int>
+//    static member Sum : source:IObservable<int64> -> IObservable<int64>
+//    static member Sum : source:IObservable<Nullable<float>> -> IObservable<Nullable<float>>
+//    static member Sum : source:IObservable<Nullable<float32>> -> IObservable<Nullable<float32>>
+//    static member Sum : source:IObservable<Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    static member Sum : source:IObservable<Nullable<int>> -> IObservable<Nullable<int>>
+//    static member Sum : source:IObservable<int> -> IObservable<int>
+//    static member Sum : source:IObservable<float32> -> IObservable<float32>
+//    static member Sum : source:IObservable<Nullable<int64>> -> IObservable<Nullable<int64>>
+//    static member Sum : source:IObservable<decimal> -> IObservable<decimal>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,float> -> IObservable<float>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,float32> -> IObservable<float32>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,decimal> -> IObservable<decimal>
+//    static member Sum : source:IObservable<float> -> IObservable<float>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int64>> -> IObservable<Nullable<int64>>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,int64> -> IObservable<int64>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float>> -> IObservable<Nullable<float>>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<float32>> -> IObservable<Nullable<float32>>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<decimal>> -> IObservable<Nullable<decimal>>
+//    static member Sum : source:IObservable<'TSource> * selector:Func<'TSource,Nullable<int>> -> IObservable<Nullable<int>>
 
     /// Transforms an observable sequence of observable sequences into an 
     /// observable sequence producing values only from the most recent 
@@ -1349,24 +1463,19 @@ module Observable =
     let switch (sources:IObservable<IObservable<'Source>>) : IObservable<'Source>= 
         Observable.Switch(sources)
 
-///////////////////////////////////////////////
+ //   static member Switch : sources:IObservable<Threading.Tasks.Task<'TSource>> -> IObservable<'TSource>
 
-///  TODO :: switch
 
-////////////////////////////////////////////////
 
     /// Synchronizes the observable sequence so that notifications cannot be delivered concurrently
     /// this voerload is useful to "fix" and observable sequence that exhibits concurrent 
     /// callbacks on individual observers, which is invalid behavior for the query processor
-    let synchronizeFix  source = 
+    let synchronize  source = 
         Observable.Synchronize( source )
 
 
-///////////////////////////////////////////////
-
-///  TODO :: synchronize 2
-
-////////////////////////////////////////////////
+//    static member Synchronize : source:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Synchronize : source:IObservable<'TSource> * gate:obj -> IObservable<'TSource>
 
     /// Takes n elements
     let take (n: int) source = Observable.Take(source, n)    
@@ -1376,20 +1485,19 @@ module Observable =
     let takeLast (count:int) source = 
         Observable.TakeLast(source, count)
 
-///////////////////////////////////////////////
-
-///  TODO :: takelast 4
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: takelastbuffer 3
-
-////////////////////////////////////////////////
-
-
+//    static member Take : source:IObservable<'TSource> * count:int -> IObservable<'TSource>
+//    static member Take : source:IObservable<'TSource> * count:int * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Take : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<'TSource>
+//    static member Take : source:IObservable<'TSource> * duration:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member TakeLast : source:IObservable<'TSource> * count:int * scheduler:IScheduler -> IObservable<'TSource>
+//    static member TakeLast : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<'TSource>
+//    static member TakeLast : source:IObservable<'TSource> * duration:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member TakeLast : source:IObservable<'TSource> * duration:TimeSpan * timerScheduler:IScheduler * loopScheduler:IScheduler -> IObservable<'TSource>
+//    static member TakeLast : source:IObservable<'TSource> * count:int -> IObservable<'TSource>
+//    static member TakeLastBuffer : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<Collections.Generic.IList<'TSource>>
+//    static member TakeLastBuffer : source:IObservable<'TSource> * count:int -> IObservable<Collections.Generic.IList<'TSource>>
+//    static member TakeLastBuffer : source:IObservable<'TSource> * duration:TimeSpan * scheduler:IScheduler -> IObservable<Collections.Generic.IList<'TSource>>
+//
 
     /// Returns the elements from the source observable sequence until the other produces and element
     let takeUntil<'Other,'Source> other source =
@@ -1404,35 +1512,31 @@ module Observable =
     /// Returns the elements from the source observable until the specified time
     let takeUntilTimer<'Source> (endtime:DateTimeOffset) scheduler source =
         Observable.TakeUntil<'Source>(source , endtime, scheduler )
-
-
-///////////////////////////////////////////////
-
-///  TODO :: takewhile 2
-
-////////////////////////////////////////////////
+//
+//    static member TakeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
+//    static member TakeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,int,bool> -> IObservable<'TSource>
+//
 
 
 
 
 
-
-///////////////////////////////////////////////
-
-///  TODO :: throttle 3
-
-////////////////////////////////////////////////
+//
+//    static member Throttle : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
+//    static member Throttle : source:IObservable<'TSource> * dueTime:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Throttle : source:IObservable<'TSource> * throttleDurationSelector:Func<'TSource,IObservable<'TThrottle>> -> IObservable<'TSource>
 
 
 
 
 
+//
+//    static member Throw : exception:exn -> IObservable<'TResult>
+//    static member Throw : exception:exn * scheduler:IScheduler * witness:'TResult -> IObservable<'TResult>
+//    static member Throw : exception:exn * scheduler:IScheduler -> IObservable<'TResult>
+//    static member Throw : exception:exn * witness:'TResult -> IObservable<'TResult>
+//
 
-///////////////////////////////////////////////
-
-///  TODO :: throw 4
-
-////////////////////////////////////////////////
 
 
 
@@ -1441,30 +1545,40 @@ module Observable =
     let thenMap map source = 
         Observable.Then( source, Func<'Source,'Result> map )
 
-///////////////////////////////////////////////
 
-///  TODO :: timeinterval 2
-
-////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////
-
-///  TODO :: timer 8
-
-////////////////////////////////////////////////
+//    static member TimeInterval : source:IObservable<'TSource> -> IObservable<TimeInterval<'TSource>>
+//    static member TimeInterval : source:IObservable<'TSource> * scheduler:IScheduler -> IObservable<TimeInterval<'TSource>>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:TimeSpan * other:IObservable<'TSource> * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * timeoutDurationSelector:Func<'TSource,IObservable<'TTimeout>> -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:DateTimeOffset * other:IObservable<'TSource> * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * firstTimeout:IObservable<'TTimeout> * timeoutDurationSelector:Func<'TSource,IObservable<'TTimeout>> * other:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:DateTimeOffset * other:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:DateTimeOffset * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:DateTimeOffset -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * timeoutDurationSelector:Func<'TSource,IObservable<'TTimeout>> * other:IObservable<'TSource> -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * firstTimeout:IObservable<'TTimeout> * timeoutDurationSelector:Func<'TSource,IObservable<'TTimeout>> -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:TimeSpan * scheduler:IScheduler -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
+//    static member Timeout : source:IObservable<'TSource> * dueTime:TimeSpan * other:IObservable<'TSource> -> IObservable<'TSource>
+//
+//
+//
+//    static member Timer : dueTime:TimeSpan * scheduler:IScheduler -> IObservable<int64>
+//    static member Timer : dueTime:DateTimeOffset * scheduler:IScheduler -> IObservable<int64>
+//    static member Timer : dueTime:DateTimeOffset * period:TimeSpan -> IObservable<int64>
+//    static member Timer : dueTime:TimeSpan * period:TimeSpan -> IObservable<int64>
+//    static member Timer : dueTime:DateTimeOffset -> IObservable<int64>
+//    static member Timer : dueTime:TimeSpan * period:TimeSpan * scheduler:IScheduler -> IObservable<int64>
+//    static member Timer : dueTime:TimeSpan -> IObservable<int64>
+//    static member Timer : dueTime:DateTimeOffset * period:TimeSpan * scheduler:IScheduler -> IObservable<int64>
 
 
 
     let takeLastBuffer (count:int) source = 
         Observable.TakeLastBuffer( source, count )  
 
-///////////////////////////////////////////////
-
-///  TODO :: timestamp 2
-
-////////////////////////////////////////////////
-
+//    static member Timestamp : source:IObservable<'TSource> -> IObservable<Timestamped<'TSource>>
+//    static member Timestamp : source:IObservable<'TSource> * scheduler:IScheduler -> IObservable<Timestamped<'TSource>>
 
     /// Converts an observable into a seq
     let toEnumerable (source: IObservable<'T>) = Observable.ToEnumerable(source)
@@ -1475,17 +1589,74 @@ module Observable =
         Observable.ToArray(source)
 
 
-///////////////////////////////////////////////
-
-///  TODO :: to Async 69
-
-////////////////////////////////////////////////
-
-    /// Creates a list from an observable sequence
-    let toList source = 
-        Observable.ToList(source)
-
-
+//    static member ToAsync : function:Func<'TResult> -> Func<IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TResult> -> Func<'TArg1,'TArg2,'TArg3,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TResult> -> Func<'TArg1,'TArg2,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TResult> * scheduler:IScheduler -> Func<'TArg1,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TResult> -> Func<'TArg1,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TResult> * scheduler:IScheduler -> Func<IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,IObservable<'TResult>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16,IObservable<Unit>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,IObservable<'TResult>>
+//    static member ToAsync : action:Action<'TArg1> * scheduler:IScheduler -> Func<'TArg1,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2> -> Func<'TArg1,'TArg2,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2> * scheduler:IScheduler -> Func<'TArg1,'TArg2,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3> -> Func<'TArg1,'TArg2,'TArg3,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,IObservable<Unit>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,IObservable<'TResult>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1> -> Func<'TArg1,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16,IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,IObservable<Unit>>
+//    static member ToAsync : action:Action * scheduler:IScheduler -> Func<IObservable<Unit>>
+//    static member ToAsync : action:Action<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,IObservable<Unit>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16,IObservable<'TResult>>
+//    static member ToAsync : action:Action -> Func<IObservable<Unit>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16,'TResult> -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TArg16,IObservable<'TResult>>
+//    static member ToAsync : function:Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,'TResult> * scheduler:IScheduler -> Func<'TArg1,'TArg2,'TArg3,'TArg4,'TArg5,'TArg6,'TArg7,'TArg8,'TArg9,'TArg10,'TArg11,'TArg12,'TArg13,'TArg14,'TArg15,IObservable<'TResult>>
 
 
     /// Creates an observable sequence according to a specified key selector function
@@ -1517,39 +1688,43 @@ module Observable =
     /// Exposes and observable sequence as an object with an Action based .NET event
     let toEvent source = 
         Observable.ToEvent(source)
+//
+//    static member ToEvent : source:IObservable<'TSource> -> IEventSource<'TSource>
+//    static member ToEvent : source:IObservable<Unit> -> IEventSource<Unit>
+    
+    /// Creates a list from an observable sequence
+    let toList source = 
+        Observable.ToList(source)
 
-///////////////////////////////////////////////
 
-///  TODO :: to event
-
-////////////////////////////////////////////////
+//
+//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<Linq.ILookup<'TKey,'TSource>>
+//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<Linq.ILookup<'TKey,'TElement>>
+//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<Linq.ILookup<'TKey,'TSource>>
+//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> -> IObservable<Linq.ILookup<'TKey,'TElement>>
+//    static member ToObservable : source:Collections.Generic.IEnumerable<'TSource> * scheduler:IScheduler -> IObservable<'TSource>
+//
 
     /// Converts a seq into an observable
     let toObservable (source: seq<'T>) = Observable.ToObservable(source)
-    
+
+
+    /// Converts a seq into an observable sequence using the provided scheduler
+    /// to run the enumeration loop
+    let toObservableScheduled scheduler (source: seq<'T>) = Observable.ToObservable( source, scheduler )
+
+
+////////////////////////////////////////////////////////
+//// TODO FIX THIS ASYNC
+//    let using ( resourceFactoryAsync:Func<Threading.CancellationToken,Threading.Tasks.Task<'TResource>> )( observableFactoryAsync:Func<'TResource,Threading.CancellationToken,Threading.Tasks.Task<IObservable<'TResult>>> -> IObservable<'TResult>
 ///////////////////////////////////////////////
 
-///  TODO :: tolookup 4
 
-////////////////////////////////////////////////
+    /// Constructs an observable sequence that depends on a resource object, whose 
+    /// lifetime is tied to the resulting observable sequence's lifetime.
+    let using ( resourceFactory: unit ->'TResource ) (observableFactory: 'TResource -> IObservable<'TResult> ) : IObservable<'TResult> =
+        Observable.Using ( Func<_> resourceFactory, Func<_,_> observableFactory )
 
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: toobservable
-
-////////////////////////////////////////////////
-
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: using 2
-
-////////////////////////////////////////////////
 
     /// waits for the observable sequence to complete and returns the last
     /// element of the sequence. If the sequence terminates with OnError
@@ -1568,29 +1743,160 @@ module Observable =
     let wherei (predicate:'T->int->bool) (source:IObservable<'T>)  = 
         Observable.Where( source, predicate )
 
-///////////////////////////////////////////////
 
-///  TODO :: while
-
-////////////////////////////////////////////////
-
-
-
-
-///////////////////////////////////////////////
-
-///  TODO :: window 11
-
-////////////////////////////////////////////////
-
-    /// Returns an observable that yields sliding windows of 
-    /// containing elements drawn from the input observable. 
-    /// Each window is returned as a fresh array.
+    /// Repeats the given function as long as the specified condition holds
+    /// where the condition is evaluated before each repeated source is 
+    /// subscribed to
+    let whileLoop condition source = 
+        Observable.While( Func<bool> condition, source ) 
+        
 
 
 
-///////////////////////////////////////////////
 
-///  TODO :: zip 19
 
-////////////////////////////////////////////////
+
+
+
+
+    let window  ( source                : IObservable<'Source>              )
+                ( windowOpenings        : IObservable<'WinOpen>             )
+                ( windowClosingSelector : 'WinOpen->IObservable<'WinClose>  ) : IObservable<IObservable<'Source>> =
+        Observable.Window(source, windowOpenings, Func<_,_> windowClosingSelector)
+
+//
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan * scheduler:IScheduler -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan * timeShift:TimeSpan -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan * timeShift:TimeSpan * scheduler:IScheduler -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( windowClosingSelector:Func<IObservable<'TWindowClosing>> -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( windowBoundaries:IObservable<'TWindowBoundary> -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan * count:int * scheduler:IScheduler -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( count:int * skip:int -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( count:int -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan * count:int -> IObservable<IObservable<'TSource>>
+//
+//
+//
+
+
+
+ 
+    let zip ( sources:IObservable<'TSource> []) : IObservable<IList<'TSource>> =
+        Observable.Zip( sources )
+ 
+
+    let Zip ( sources       : seq<IObservable<'TSource>>    )
+            ( resultSelector: IList<'TSource>->'TResult     ) : IObservable<'TResult> =
+        Observable.Zip( sources, Func<IList<'TSource>,'TResult> resultSelector)
+ 
+
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( source11:IObservable<'TSource11> )( source12:IObservable<'TSource12> )( source13:IObservable<'TSource13> )( source14:IObservable<'TSource14> )( source15:IObservable<'TSource15> )( source16:IObservable<'TSource16> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TSource11,'TSource12,'TSource13,'TSource14,'TSource15,'TSource16,'TResult> -> IObservable<'TResult>)
+//        Observable.Zip
+// 
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( source11:IObservable<'TSource11> )( source12:IObservable<'TSource12> )( source13:IObservable<'TSource13> )( source14:IObservable<'TSource14> )( source15:IObservable<'TSource15> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TSource11,'TSource12,'TSource13,'TSource14,'TSource15,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( source11:IObservable<'TSource11> )( source12:IObservable<'TSource12> )( source13:IObservable<'TSource13> )( source14:IObservable<'TSource14> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TSource11,'TSource12,'TSource13,'TSource14,'TResult> -> IObservable<'TResult>
+//        Observable.Zip    
+//    
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( source11:IObservable<'TSource11> )( source12:IObservable<'TSource12> )( source13:IObservable<'TSource13> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TSource11,'TSource12,'TSource13,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( source11:IObservable<'TSource11> )( source12:IObservable<'TSource12> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TSource11,'TSource12,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( source11:IObservable<'TSource11> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TSource11,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( source10:IObservable<'TSource10> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TSource10,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( source9:IObservable<'TSource9> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TSource9,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( source8:IObservable<'TSource8> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TSource8,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( source7:IObservable<'TSource7> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TSource7,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> )( source4:IObservable<'TSource4>)(  source5:IObservable<'TSource5> )( source6:IObservable<'TSource6> )( resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TSource6,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( first:IObservable<'TSource1> * ) (second:IObservable<'TSource2>  )( resultSelector:Func<'TSource1,'TSource2,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> * resultSelector:Func<'TSource1,'TSource2,'TSource3,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let Zip ( source1:IObservable<'TSource1> ) (source2:IObservable<'TSource2> )( source3:IObservable<'TSource3> * source4:IObservable<'TSource4> * source5:IObservable<'TSource5> * resultSelector:Func<'TSource1,'TSource2,'TSource3,'TSource4,'TSource5,'TResult> -> IObservable<'TResult>
+//        Observable.Zip
+// 
+//
+//    let zip ( resultSelector: 'TSource1 -> 'TSource2 -> 'TResult         )
+//            ( second        : Collections.Generic.IEnumerable<'TSource2> )
+//            ( first         : IObservable<'TSource1>                     ) : IObservable<'TResult> =
+//        Observable.Zip(first, second, Func<_,_,_> resultSelector )
+// 
+//
+//
+//    let Zip ( sources:Collections.Generic.IEnumerable<IObservable<'TSource>> -> IObservable<Collections.Generic.IList<'TSource>>
+//
+//           
+//
+//
+//
+//
+//
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
