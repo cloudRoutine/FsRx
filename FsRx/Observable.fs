@@ -66,7 +66,14 @@ module Observable =
 
 
     let aggregate f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
-    //Observable.fo
+
+
+///////////////////////////////////////////////
+
+///  TODO :: aggregate 2
+
+////////////////////////////////////////////////
+
 
     /// Determines whether all elements of and observable satisfy a predicate
     let all pred source =
@@ -77,6 +84,11 @@ module Observable =
     /// Returns the observable sequence that reacts first
     let amb second first = Observable.Amb(first, second)
 
+///////////////////////////////////////////////
+
+///  TODO :: amb 2
+
+////////////////////////////////////////////////
 
     /// Determines whether an observable sequence contains any elements
     let any  (source:IObservable<'Source>) : IObservable<bool> = 
@@ -101,7 +113,11 @@ module Observable =
                     }) 
         }
 
+///////////////////////////////////////////////
 
+///  TODO :: asObservable
+
+////////////////////////////////////////////////
 
 
 
@@ -113,16 +129,34 @@ module Observable =
     let apply f m = f |> bind (fun f' -> m |> bind (fun m' -> Observable.Return(f' m')))
  
  
+ ///////////////////////////////////////////////
 
+///  TODO :: average 20
+
+////////////////////////////////////////////////
 
 
     /// Matches when both observable sequences have an available value
     let both second first = Observable.And(first, second)   
 
+
+///////////////////////////////////////////////
+
+///  TODO :: buffer 11
+
+////////////////////////////////////////////////
+
     
     /// Converts the elements of the sequence to the specified type
     let cast<'CastType> (source) =
         Observable.Cast<'CastType>(source)
+
+///////////////////////////////////////////////
+
+///  TODO :: case 4
+
+////////////////////////////////////////////////
+
 
 
     /// Continues an observable sequence that is terminated
@@ -130,22 +164,38 @@ module Observable =
     let catch (second: IObservable<'T>) first =
         Observable.Catch(first, second) 
 
+///////////////////////////////////////////////
+
+///  TODO :: catch 3
+
+////////////////////////////////////////////////
+
 
     /// Produces an enumerable sequence of consequtive (possibly empty) chunks of the source observable
     let chunkify<'Source> source : IEnumerable<IList<'Source>> = 
         Observable.Chunkify<'Source>( source )
 
+///////////////////////////////////////////////
 
-///--------------------------------------------------
+///  TODO :: collect 2
 
-//// TODO IMPLEMENT ALL 18 OF THE OVERLOADS
- ///  Observable.CombineLatest()
+////////////////////////////////////////////////
 
- ///---------------------------------------------
+///////////////////////////////////////////////
+
+///  TODO :: combineLatest 18
+
+////////////////////////////////////////////////
 
     /// Concats (flattens) an observable of observables into an observable
     /// ===> Observable.SelectMany(observable, Func<_,_>(fun (x:IObservable<'T>) -> x))
     let concat (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Concat(first, second)
+
+///////////////////////////////////////////////
+
+///  TODO :: concat 3
+
+////////////////////////////////////////////////
 
 
     /// Produces and enumerable sequence that returns elements collected/aggregated 
@@ -161,31 +211,32 @@ module Observable =
     let connect ( source:Subjects.IConnectableObservable<_> )=    
         source.Connect()
 
+///////////////////////////////////////////////
+
+///  TODO :: contains 2
+
+////////////////////////////////////////////////
+
 
     /// Counts the elements
     let count source = Observable.Count(source)
+
+///////////////////////////////////////////////
+
+///  TODO :: count
+
+////////////////////////////////////////////////
 
 
     /// Creates an observable sequence from the specified Subscribe method implementation.
     let create (f: IObserver<'T> -> (unit -> unit)) = Observable.Create f
 
-///-----------------------------------------------
+///////////////////////////////////////////////
 
-// Implement 10 CREATE overloads
+///  TODO :: Create 8
 
-//////////////-------------------
+////////////////////////////////////////////////------------------
 
-
-//    /// Creates and observer for the provided onNext function
-//    let create (onNext:IObserver<_> -> unit): IObservable<_> =
-//        { new IObservable<_> with
-//            member this.Subscribe(observer:IObserver<_>) =
-//                let dispose = onNext observer
-//                { new IDisposable with member this.Dispose() = dispose() }
-//        }
-
-
-    
 
     let createWithDisposable f =
         { new IObservable<_> with
@@ -193,14 +244,41 @@ module Observable =
         }
 
 
-    /// Returns an observable sequence that only contains distinct elements 
-    let distinct source = 
-        Observable.Distinct(source)
+///////////////////////////////////////////////
+
+///  TODO :: defaultIfEmpty 2
+
+////////////////////////////////////////////////
 
 
-    /// Returns an observable sequence that only contains distinct contiguous elements 
-    let distinctUntilChanged source = 
-        Observable.DistinctUntilChanged(source)
+
+///////////////////////////////////////////////
+
+///  TODO :: defer 2
+
+////////////////////////////////////////////////
+
+///////////////////////////////////////////////
+
+///  TODO :: defer async
+
+////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: delay 6
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: delaySubscription 4
+
+////////////////////////////////////////////////
+
 
 
     let dematerialize source = 
@@ -208,8 +286,59 @@ module Observable =
 
 
 
+
+
+    /// Returns an observable sequence that only contains distinct elements 
+    let distinct source = 
+        Observable.Distinct(source)
+
+
+///////////////////////////////////////////////
+
+///  TODO :: distinct 3
+
+////////////////////////////////////////////////
+
+    /// Returns an observable sequence that only contains distinct contiguous elements 
+    let distinctUntilChanged source = 
+        Observable.DistinctUntilChanged(source)
+
+///////////////////////////////////////////////
+
+///  TODO :: distinctUntilChanged 3
+
+////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: doWhile
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: elementat
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: elementOrDefault
+
+////////////////////////////////////////////////
+
     /// Generates an empty observable
     let empty<'T> = Observable.Empty<'T>()
+
+///////////////////////////////////////////////
+
+///  TODO :: empty 3
+
+////////////////////////////////////////////////
 
 
     let error e =
@@ -232,23 +361,70 @@ module Observable =
     let filter  (predicate:'T->bool) (source:IObservable<'T>) = 
         Observable.Where( source, predicate )
 
+///////////////////////////////////////////////
+
+///  TODO :: finally
+
+////////////////////////////////////////////////
+
+///////////////////////////////////////////////
+
+///  TODO :: first 2
+
+////////////////////////////////////////////////
 
     /// Returns the first element of an observable sequence
     let firstAsync  = 
         Observable.FirstAsync
 
+///////////////////////////////////////////////
 
+///  TODO :: firstAsync 1
+
+////////////////////////////////////////////////
+
+///////////////////////////////////////////////
+
+///  TODO :: firstOrDefault 2
+
+////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: first or default async 2
+
+////////////////////////////////////////////////
 
 
     /// Folds the observable
     let fold f seed source = Observable.Aggregate(source, seed, Func<_,_,_> f)
 
+///////////////////////////////////////////////
 
-/// TODO FOR AND FOREACH ASYNC
-    //    let forEachAsync source = 
-//        Observable.ForEachAsync(source)
+///  TODO :: for
+
+////////////////////////////////////////////////
+
+///////////////////////////////////////////////
+
+///  TODO :: forEach 2
+
+////////////////////////////////////////////////
 
 
+///////////////////////////////////////////////
+
+///  TODO :: FromAsync 4
+
+////////////////////////////////////////////////
+
+///////////////////////////////////////////////
+
+///  TODO :: FromAsyncPattern 30
+
+////////////////////////////////////////////////
 
     let fromEvent<'EventArgs, 'Delegate when 'EventArgs:> EventArgs>
             ( conversion   : ('EventArgs -> unit ) -> 'Delegate )
@@ -263,7 +439,11 @@ module Observable =
                 { new IDisposable with member this.Dispose() = remove () }
         }
 
+///////////////////////////////////////////////
 
+///  TODO :: fromEVent 7
+
+////////////////////////////////////////////////
 
     let fromEventHandler<'EventArgs when 'EventArgs:> EventArgs>
         ( addHandler    : EventHandler<_> -> unit )
@@ -281,19 +461,38 @@ module Observable =
     let fromEventPattern<'T> eventName  (target:obj) =
         Observable.FromEventPattern( target, eventName )
 
+///////////////////////////////////////////////
 
+///  TODO :: fromEventPattern 21
+
+////////////////////////////////////////////////
 
     let generate initialstate condition iterator selector = 
         Observable.Generate( initialstate, condition, iterator, selector )
 
+///////////////////////////////////////////////
 
-///---------TODO - IMPLEMENT THE 7 OVERLOADS
+///  TODO :: generate 5
+
+////////////////////////////////////////////////
+
+
+
     let groupBy source keySelector = 
         Observable.GroupBy( source, keySelector )
 
-//    let groupUntil source = 
-//        Observable.GroupByUntil(source)
+///////////////////////////////////////////////
 
+///  TODO :: groupBy 7
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: groupbyuntil 8
+
+////////////////////////////////////////////////
 
     /// Correlates the elements of two sequences based on overlapping 
     /// durations and groups the results
@@ -337,6 +536,34 @@ module Observable =
         Observable.When( plans )
 
 
+///////////////////////////////////////////////
+
+///  TODO :: last 2
+
+////////////////////////////////////////////////
+
+///////////////////////////////////////////////
+
+///  TODO :: last async 2
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: lastor default 2
+
+////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: lastordefault async 2
+
+////////////////////////////////////////////////
+
+
     let latest source = 
         Observable.Latest( source )
 
@@ -347,7 +574,11 @@ module Observable =
         Observable.LongCount(source)
 
 
+///////////////////////////////////////////////
 
+///  TODO :: longcount
+
+////////////////////////////////////////////////
 
 
 
@@ -369,40 +600,57 @@ module Observable =
     let map2 f a b = apply (apply f a) b
 
 
-    /// TODO ADD MORE MERGES
-
-    /// Merges the two observables
-    let merge (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Merge(first, second)
-
-
-
-
-
-
     /// Materializes the implicit notifications of an observable sequence as
     /// explicit notification values
     let materialize source = 
         Observable.Materialize( source )
 
 
+
+///////////////////////////////////////////////
+
+///  TODO :: max 23
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: maxby 2
+
+////////////////////////////////////////////////
+    
+    
+    /// Merges the two observables
+    let merge (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Merge(first, second)
+
+///////////////////////////////////////////////
+
+///  TODO :: merge 10
+
+////////////////////////////////////////////////
+
+
+
+
+
     /// TODO IMPLEMENT 19 OVERLOADS of MAX
     let maxOf (source:IObservable<'T>) = 
         Observable.Max( source )
 
+///////////////////////////////////////////////
+
+///  TODO :: min 24
+
+////////////////////////////////////////////////
 
 
-//    let maxBy source = 
-//        Observable.MaxBy(source)
-//
-//    let minOf source = 
-//        Observable.Min(source)
-//
-//    let minBy source = 
-//        Observable.MinBy(source)
-//
-//    let using  source = 
-//        Observable.Using(source)
 
+///////////////////////////////////////////////
+
+///  TODO :: minby 2
+
+////////////////////////////////////////////////
 
     /// Returns an enumerable sequence whose sequence whose enumeration returns the 
     /// most recently observed element in the source observable sequence, using 
@@ -410,11 +658,19 @@ module Observable =
     let mostRecent initialVal source = 
         Observable.MostRecent( source, initialVal )
 
+///////////////////////////////////////////////
+
+///  TODO :: multicast 2
+
+////////////////////////////////////////////////
 
 
 
+///////////////////////////////////////////////
 
+///  TODO :: never 2
 
+////////////////////////////////////////////////
 
 
 
@@ -427,17 +683,6 @@ module Observable =
  
 
 
-
-        
- 
-
-
-
-
-    let onErrorResumeNext sources : IObservable<'Source> = 
-        Observable.OnErrorResumeNext(sources)
-
-
     /// Returns the sequence as an observable
     let ofSeq<'Item>(items:'Item seq) : IObservable<'Item> =
         {   
@@ -448,9 +693,31 @@ module Observable =
                     {   new IDisposable with member __.Dispose() = ()   }
         }
 
+///////////////////////////////////////////////
+
+///  TODO :: observeOn 2
+
+////////////////////////////////////////////////
+
     /// Filters the elements of an observable sequence based on the specified type
     let ofType source = 
         Observable.OfType( source )
+        
+ 
+
+
+
+
+    let onErrorResumeNext sources : IObservable<'Source> = 
+        Observable.OnErrorResumeNext(sources)
+
+///////////////////////////////////////////////
+
+///  TODO ::  onerrorresumeNext 2
+
+////////////////////////////////////////////////
+
+
 
 
     let pairwise (source:IObservable<'a>) : IObservable<'a*'a> = 
@@ -527,6 +794,13 @@ module Observable =
     /// Creates a range as an observable
     let range start count = Observable.Range(start, count)
 
+    
+///////////////////////////////////////////////
+
+///  TODO :: range 1
+
+////////////////////////////////////////////////
+
 
     /// Reduces the observable
     let reduce f source = Observable.Aggregate(source, Func<_,_,_> f)
@@ -539,6 +813,44 @@ module Observable =
         Observable.RefCount ( source )   
 
 
+ 
+///////////////////////////////////////////////
+
+///  TODO :: repeat 6
+
+////////////////////////////////////////////////
+
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: replay 16
+
+////////////////////////////////////////////////
+
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: retry  2
+
+////////////////////////////////////////////////
+
+
+        
+
+
+///////////////////////////////////////////////
+
+///  TODO :: return 2
+
+////////////////////////////////////////////////
+
+
     let result x : IObservable<_>=
         { new IObservable<_> with
             member this.Subscribe(observer:IObserver<_>) =
@@ -547,7 +859,6 @@ module Observable =
                 { new IDisposable with member this.Dispose() = () }
         }
 
-        
 
 
 
@@ -557,6 +868,16 @@ module Observable =
     let sample (interval: TimeSpan) source =
         Observable.Sample(source, interval)
 
+        
+///////////////////////////////////////////////
+
+///  TODO :: sample 2
+
+////////////////////////////////////////////////
+
+
+
+
 
     /// Applies an accumulator function over an observable sequence
     /// and returns each intermediate result. The specified seed value 
@@ -564,6 +885,62 @@ module Observable =
     /// without intermediate results use 'aggregate'
     let scan (collector:'a->'b->'a) state source =
         Observable.Scan(source,  state, Func<'a,'b,'a>collector )
+
+        
+///////////////////////////////////////////////
+
+///  TODO :: scan overload
+
+////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: select many 19
+
+////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: sequence equal 4
+
+////////////////////////////////////////////////
+
+
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: single 2
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: singleasync 2
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: singleordefault 2
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: singleOrDefaultAsync 2
+
+////////////////////////////////////////////////
 
 
 
@@ -585,17 +962,66 @@ module Observable =
 
     /// Skips n elements
     let skip (n: int) source = Observable.Skip(source, n)
+  
+  
+///////////////////////////////////////////////
+
+///  TODO ::skip 2
+
+////////////////////////////////////////////////
+
+
+  
+///////////////////////////////////////////////
+
+///  TODO :: skip last 3
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: skip until 6
+
+////////////////////////////////////////////////
+
+
+  
+  
      
 
     /// Skips elements while the predicate is satisfied
     let skipWhile f source = Observable.SkipWhile(source, Func<_,_> f)
  
 
+ 
+///////////////////////////////////////////////
+
+///  TODO :: Start 4
+
+////////////////////////////////////////////////
+
+
+
+
+ 
+///////////////////////////////////////////////
+
+///  TODO :: start async 4
+
+////////////////////////////////////////////////
+
+
 
 
     let startWith source param = 
         Observable.StartWith( source, param )
+        
+///////////////////////////////////////////////
 
+///  TODO :: startwith 3
+
+////////////////////////////////////////////////
 
 
     /// Subscribes to the Observable with a next fuction.
@@ -626,6 +1052,20 @@ module Observable =
     let subscribeObserver observer (observable: IObservable<'T>) =
         observable.Subscribe observer
 
+///////////////////////////////////////////////
+
+///  TODO :: subscribeOn 2
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: sum 20
+
+////////////////////////////////////////////////
+
+
 
     /// Transforms an observable sequence of observable sequences into an 
     /// observable sequence producing values only from the most recent 
@@ -634,6 +1074,11 @@ module Observable =
     let switch (sources:IObservable<IObservable<'Source>>) : IObservable<'Source>= 
         Observable.Switch(sources)
 
+///////////////////////////////////////////////
+
+///  TODO :: switch
+
+////////////////////////////////////////////////
 
     /// Synchronizes the observable sequence so that notifications cannot be delivered concurrently
     /// this voerload is useful to "fix" and observable sequence that exhibits concurrent 
@@ -642,6 +1087,12 @@ module Observable =
         Observable.Synchronize( source )
 
 
+///////////////////////////////////////////////
+
+///  TODO :: synchronize 2
+
+////////////////////////////////////////////////
+
     /// Takes n elements
     let take (n: int) source = Observable.Take(source, n)    
 
@@ -649,6 +1100,19 @@ module Observable =
     /// Returns a specified number of contiguous elements from the end of an obserable sequence
     let takeLast (count:int) source = 
         Observable.TakeLast(source, count)
+
+///////////////////////////////////////////////
+
+///  TODO :: takelast 4
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: takelastbuffer 3
+
+////////////////////////////////////////////////
 
 
 
@@ -667,18 +1131,34 @@ module Observable =
         Observable.TakeUntil<'Source>(source , endtime, scheduler )
 
 
+///////////////////////////////////////////////
 
-    let takeWhile f (source:IObservable<'TSource>) =
-        {   new IObservable<_> with
-                member __.Subscribe(observer:IObserver<_>) =
-                    let take = ref true               
-                    let d = source.Subscribe(fun item ->
-                        if !take then
-                            if f item then observer.OnNext item
-                            else take := false; observer.OnCompleted()
-                    )     
-                    { new IDisposable with member __.Dispose() = d.Dispose() }
-        }
+///  TODO :: takewhile 2
+
+////////////////////////////////////////////////
+
+
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: throttle 3
+
+////////////////////////////////////////////////
+
+
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: throw 4
+
+////////////////////////////////////////////////
+
 
 
     /// matches when the observable sequence has an available element and 
@@ -686,14 +1166,30 @@ module Observable =
     let thenMap map source = 
         Observable.Then( source, Func<'Source,'Result> map )
 
+///////////////////////////////////////////////
+
+///  TODO :: timeinterval 2
+
+////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////
+
+///  TODO :: timer 8
+
+////////////////////////////////////////////////
+
+
 
     let takeLastBuffer (count:int) source = 
         Observable.TakeLastBuffer( source, count )  
 
+///////////////////////////////////////////////
 
-    /// Converts a seq into an observable
-    let toObservable (source: seq<'T>) = Observable.ToObservable(source)
-    
+///  TODO :: timestamp 2
+
+////////////////////////////////////////////////
+
 
     /// Converts an observable into a seq
     let toEnumerable (source: IObservable<'T>) = Observable.ToEnumerable(source)
@@ -704,17 +1200,17 @@ module Observable =
         Observable.ToArray(source)
 
 
+///////////////////////////////////////////////
+
+///  TODO :: to Async 69
+
+////////////////////////////////////////////////
+
     /// Creates a list from an observable sequence
     let toList source = 
         Observable.ToList(source)
 
 
-    /// Exposes and observable sequence as an object with an Action based .NET event
-    let toEvent source = 
-        Observable.ToEvent(source)
-
-//    let toAsync source = 
-//        Observable.ToAsync(source)
 
 
     /// Creates an observable sequence according to a specified key selector function
@@ -741,7 +1237,44 @@ module Observable =
                                     Func<'Source,'Key> keySelector      , 
                                     Func<'Source,'Elm> elementSelector  , 
                                     comparer                            ) 
+    
 
+    /// Exposes and observable sequence as an object with an Action based .NET event
+    let toEvent source = 
+        Observable.ToEvent(source)
+
+///////////////////////////////////////////////
+
+///  TODO :: to event
+
+////////////////////////////////////////////////
+
+    /// Converts a seq into an observable
+    let toObservable (source: seq<'T>) = Observable.ToObservable(source)
+    
+///////////////////////////////////////////////
+
+///  TODO :: tolookup 4
+
+////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: toobservable
+
+////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: using 2
+
+////////////////////////////////////////////////
 
     /// waits for the observable sequence to complete and returns the last
     /// element of the sequence. If the sequence terminates with OnError
@@ -760,9 +1293,20 @@ module Observable =
     let wherei (predicate:'T->int->bool) (source:IObservable<'T>)  = 
         Observable.Where( source, predicate )
 
+///////////////////////////////////////////////
 
-/// TODO THE 6 OVERLOADS FOR WINDOW
-//    Observable.Window
+///  TODO :: while
+
+////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////
+
+///  TODO :: window 11
+
+////////////////////////////////////////////////
 
     /// Returns an observable that yields sliding windows of 
     /// containing elements drawn from the input observable. 
@@ -770,6 +1314,8 @@ module Observable =
 
 
 
-    //// Add in the ZIP function with all the overloads
+///////////////////////////////////////////////
 
+///  TODO :: zip 19
 
+////////////////////////////////////////////////
