@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsRx", "FsRx\FsRx.fsproj", "{130BF04D-485D-4E85-9986-67F0814CD41A}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsRxLib", "FsRxLib\FsRxLib.fsproj", "{1BA532B8-A7DF-4435-9E98-3E60F7F96F94}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{130BF04D-485D-4E85-9986-67F0814CD41A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{130BF04D-485D-4E85-9986-67F0814CD41A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{130BF04D-485D-4E85-9986-67F0814CD41A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BA532B8-A7DF-4435-9E98-3E60F7F96F94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BA532B8-A7DF-4435-9E98-3E60F7F96F94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BA532B8-A7DF-4435-9E98-3E60F7F96F94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BA532B8-A7DF-4435-9E98-3E60F7F96F94}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
