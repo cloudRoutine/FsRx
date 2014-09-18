@@ -153,11 +153,8 @@ module Observable =
     let cast<'CastType> (source) =
         Observable.Cast<'CastType>(source)
 
-///////////////////////////////////////////////
 
-///  TODO :: case 4
 
-////////////////////////////////////////////////
     /// Uses selector to determine which source in sources to return,
     /// choosing an empty sequence if no match is found
     let case selector sources =
@@ -665,11 +662,67 @@ module Observable =
     /// Merges the two observables
     let merge (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Merge(first, second)
 
-///////////////////////////////////////////////
 
-///  TODO :: merge 10
+    /// Merges elements from two observable sequences into a single observable sequence 
+    /// usind the specified scheduler for enumeration and for subscriptions
+    let mergeScheduled (scheduler:Concurrency.IScheduler)(second:IObservable<'T>)(first: IObservable<'T>) =
+        Observable.Merge( first, second, scheduler)
 
-////////////////////////////////////////////////
+
+    /// Merges all the observable sequences into a single observable sequence.
+    let mergeArray (sources:IObservable<'T>[]) =
+        Observable.Merge(sources)
+
+
+    /// Merges an enumerable sequence of observable sequences into a single observable sequence.
+    /// usind the specified scheduler for enumeration and for subscriptions
+    let mergeArrayScheduled (scheduler:Concurrency.IScheduler)(sources:IObservable<'T>[]) =
+        Observable.Merge(scheduler, sources )
+
+
+    /// Merges elements from all inner observable sequences 
+    /// into a single  observable sequence.
+    let mergeInner (sources:IObservable<IObservable<'T>>) =
+        Observable.Merge(sources)
+
+
+    /// Merges elements from all inner observable sequences 
+    /// into a single  observable sequence limiting the number of concurrent 
+    /// subscriptions to inner sequences
+    let mergeInnerScheduled (maxConcurrent:int) (sources:IObservable<IObservable<'T>>) =
+        Observable.Merge(sources, maxConcurrent)
+
+
+    /// Merges an enumerable sequence of observable sequences into a single observable sequence.
+    let mergeSeq (sources:seq<IObservable<'T>>) =
+        Observable.Merge(sources)
+
+
+    /// Merges an enumerable sequence of observable sequences into an observable sequence,
+    ///  limiting the number of concurrent subscriptions to inner sequences.
+    let mergeSeqMax (maxConcurrent:int)(sources:seq<IObservable<'T>>) =
+        Observable.Merge(sources, maxConcurrent)
+
+
+    /// Merges an enumerable sequence of observable sequences into a single observable sequence.
+    /// usind the specified scheduler for enumeration and for subscriptions
+    let mergeSeqScheduled (scheduler:Concurrency.IScheduler) (sources:seq<IObservable<'T>>) =
+        Observable.Merge(sources, scheduler )
+
+
+    let mergeSeqMaxScheduled (scheduler:Concurrency.IScheduler)(maxConcurrent:int)(sources:seq<IObservable<'T>>) =
+        Observable.Merge(sources,maxConcurrent, scheduler)
+
+
+    /// Merge results from all source tasks into a single observable sequence
+    let mergeTasks (sources:IObservable<Tasks.Task<'T>>) =
+        Observable.Merge(sources)
+
+
+
+
+
+
 
 
 
