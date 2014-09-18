@@ -117,12 +117,10 @@ module Observable =
                     }) 
         }
 
-///////////////////////////////////////////////
 
-///  TODO :: asObservable
-
-////////////////////////////////////////////////
-
+    /// Hides the identy of an observable sequence 
+    let asObservable source : IObservable<'Source>=
+        Observable.AsObservable( source )
 
 
     /// Binds an observable to generate a subsequent observable.
@@ -160,7 +158,20 @@ module Observable =
 ///  TODO :: case 4
 
 ////////////////////////////////////////////////
+    /// Uses selector to determine which source in sources to return,
+    /// choosing an empty sequence if no match is found
+    let case selector sources =
+        Observable.Case( Func<_> selector, sources )
 
+    /// Uses selector to determine which source in sources to return,
+    /// choosing defaultSource if no match is found
+    let caseDefault selector (defaultSource:IObservable<'Result>) (sources:IDictionary<'Value,IObservable<'Result>>) =
+        Observable.Case( Func<'Value> selector, sources, defaultSource )
+
+    /// Uses selector to determine which source in sources to return,
+    /// choosing an empty sequence on the specified scheduler if no match is found
+    let caseScheduler selector (scheduler:Concurrency.IScheduler) sources =
+        Observable.Case( Func<_> selector, sources, scheduler )
 
 
     /// Continues an observable sequence that is terminated
