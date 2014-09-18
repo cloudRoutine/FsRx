@@ -16,56 +16,7 @@ open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
 
 
-// ----------------------------------------------------------------------------
-
-/// Union type that represents different messages that can be sent to the
-/// IObserver interface. The IObserver type is equivalent to a type that has
-/// just OnNext method that gets 'ObservableUpdate' as an argument.
-type ObservableUpdate<'T> = 
-    | Next      of 'T
-    | Error     of exn
-    | Completed
-
-
-
-
 module Observable =
-
-    type Observer with
-        [<Extension>]
-        /// Creates an observer from the specified onNext function.
-        static member Create( onNext:'a -> unit ) : IObserver<'a> =
-            Observer.Create( Action<_> onNext )
-
-        [<Extension>]
-        /// Creates an observer from the specified onNext and onError functions.
-        static member Create( onNext, onError) =
-            Observer.Create( Action<_> onNext, Action<_> onError )
-
-        [<Extension>]
-        /// Creates an observer from the specified onNext and onCompleted functions.
-        static member Create( onNext, onCompleted ) =
-            Observer.Create( Action<_> onNext, Action onCompleted )
-
-        [<Extension>]
-        /// Creates an observer from the specified onNext, onError, and onCompleted functions.
-        static member Create( onNext, onError, onCompleted ) =
-            Observer.Create( Action<_> onNext, Action<_> onError, Action onCompleted )
-
-
-
-
-    type Observable with
-        [<Extension>]
-        /// Creates an observable sequence from the provided subscribe function.
-        static member Create (subscribe: IObserver<'T> -> unit -> unit) =
-            Observable.Create( Func<_,_>(fun o -> Action(subscribe o)))
-
-        [<Extension>]
-        /// Creates an observable sequence from the provided subscribe function.
-        static member Create subscribe =
-            Observable.Create( Func<_,IDisposable> subscribe )
-
 
 
 
@@ -100,22 +51,6 @@ module Observable =
 
 
 
-
-    /// Turns observable into an observable that only calls OnNext method of the
-    /// observer, but gives it a discriminated union that represents different
-    /// kinds of events (error, next, completed)
-    let asUpdates (input:IObservable<'T>) = 
-        { 
-            new IObservable<_> with
-                member x.Subscribe(observer) =
-                  input.Subscribe
-                   ({ 
-                        new IObserver<_> with
-                            member x.OnNext(v)     = observer.OnNext( Next v    )
-                            member x.OnCompleted() = observer.OnNext( Completed ) 
-                            member x.OnError(e)    = observer.OnNext( Error e   ) 
-                    }) 
-        }
 
 
     /// Hides the identy of an observable sequence 
@@ -193,6 +128,175 @@ module Observable =
 
 ////////////////////////////////////////////////
 
+
+    /// Merges the specified observable sequences into one observable sequence by 
+    /// emmiting a list with the latest source elements of whenever any of the 
+    /// observable sequences produces and element.
+    let combineLatest (source :seq<IObservable<'T>> ) : IObservable<IList<'T>> =
+        Observable.CombineLatest( source )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestArray (source :IObservable<'T>[] )  =
+        Observable.CombineLatest( source )        
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap ( map : IList<'T>-> 'Result  )(source :seq<IObservable<'T>> )  =
+        Observable.CombineLatest( source, Func<IList<'T>,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap2 ( map : 'T1->'T2->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> )  =
+        Observable.CombineLatest( s1,s2,Func<'T1,'T2,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap3 ( map : 'T1->'T2->'T3->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> )=
+        Observable.CombineLatest( s1,s2,s3, Func<'T1,'T2,'T3,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap4 ( map : 'T1->'T2->'T3->'T4->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> ) =
+        Observable.CombineLatest( s1,s2,s3,s4, Func<'T1,'T2,'T3,'T4,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap5 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->
+                                            'T9->'T10->'T11->'T12->'T13->'T14->'T15->'T16->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>) (s12:IObservable<'T12>)
+                        (s13:IObservable<'T13>) (s14:IObservable<'T14>) (s15:IObservable<'T15>) (s16:IObservable<'T16>) =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,
+                                        'T10,'T11,'T12,'T13,'T14,'T15,'T16,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap6 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> )  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,Func<'T1,'T2,'T3,'T4,'T5,'T6,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap7 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> )  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap8 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> ) =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap9 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->'T9->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> )  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap10 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->'T9->'T10->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>)  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,
+                                    Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,'T10,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap11 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->'T9->'T10->'T11->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>)  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,'T10,'T11,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap12 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->
+                                    'T7->'T8->'T9->'T10->'T11->'T12->'Result )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>) (s12:IObservable<'T12>) =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,'T10,'T11,'T12,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap13 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->
+                                            'T9->'T10->'T11->'T12->'T13->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>) (s12:IObservable<'T12>)
+                        (s13:IObservable<'T13>)  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,'T10,'T11,'T12,'T13,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap14 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->
+                                            'T9->'T10->'T11->'T12->'T13->'T14->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>) (s12:IObservable<'T12>)
+                        (s13:IObservable<'T13>) (s14:IObservable<'T14>)  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,'T10,'T11,'T12,'T13,'T14,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap15 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->
+                                            'T9->'T10->'T11->'T12->'T13->'T14->'T15->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>) (s12:IObservable<'T12>)
+                        (s13:IObservable<'T13>) (s14:IObservable<'T14>) (s15:IObservable<'T15>)  =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,
+                                        'T10,'T11,'T12,'T13,'T14,'T15,'Result> map )
+
+
+    /// Merges the specified observable sequences into one observable sequence by  applying the map
+    /// whenever any of the observable sequences produces and element.
+    let combineLatestMap16 ( map : 'T1->'T2->'T3->'T4->'T5->'T6->'T7->'T8->
+                                            'T9->'T10->'T11->'T12->'T13->'T14->'T15->'T16->'Result  )
+                        (s1 :IObservable<'T1> ) (s2 :IObservable<'T2> ) (s3 :IObservable<'T3> ) (s4 :IObservable<'T4> )
+                        (s5 :IObservable<'T5> ) (s6 :IObservable<'T6> ) (s7 :IObservable<'T7> ) (s8 :IObservable<'T8> )
+                        (s9 :IObservable<'T9> ) (s10:IObservable<'T10>) (s11:IObservable<'T11>) (s12:IObservable<'T12>)
+                        (s13:IObservable<'T13>) (s14:IObservable<'T14>) (s15:IObservable<'T15>) (s16:IObservable<'T16>) =
+        Observable.CombineLatest( s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,
+                                  Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'T8,'T9,
+                                        'T10,'T11,'T12,'T13,'T14,'T15,'T16,'Result> map )
+
+    // #endregion 
+
 ///////////////////////////////////////////////
 
 ///  TODO :: combineLatest 18
@@ -266,8 +370,7 @@ module Observable =
 ////////////////////////////////////////////////
 
 
-    /// Creates an observable sequence from the specified Subscribe method implementation.
-    let create (f: IObserver<'T> -> (unit -> unit)) = Observable.Create f
+
 
 ///////////////////////////////////////////////
 
