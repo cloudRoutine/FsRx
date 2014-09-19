@@ -1,7 +1,6 @@
-﻿// ----------------------------------------------------------------------------
-// (c) Jared Hester, 2014
-// ----------------------------------------------------------------------------
-
+﻿//|--------------------------------------//
+//| (c) Jared Hester, 2014              //
+//|------------------------------------//
 
 namespace FSharp.Control
 
@@ -262,32 +261,63 @@ module Observable =
     let countSatisfy predicate source = 
         Observable.Count( source, predicate )
 
-
+    ///  Creates an observable sequence from a specified Subscribe method implementation.
     let create subscribe =
         Observable.Create(Func<IObserver<'Result>,Action> subscribe)
 
 
-    let createDisposable subscribe =
+    /// Creates an observable sequence from a specified Subscribe method implementation.
+    let createWithDisposable subscribe =
         Observable.Create(Func<IObserver<'Result>,IDisposable> subscribe)
 
 
+    /// Returns the elements of the specified sequence or the type parameter's default value 
+    /// in a singleton sequence if the sequence is empty.
+    let defaultIfEmpty    ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.DefaultIfEmpty( source )
 
-    let createWithDisposable f =
-        { new IObservable<_> with
-            member this.Subscribe(observer:IObserver<_>) = f observer
-        }
+
+    /// Returns the elements of the specified sequence or the specified value in a singleton sequence if the sequence is empty.
+    let defaultIfEmptySeed (defaultValue:'TSource )( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.DefaultIfEmpty( source, defaultValue )
+    
+
+    /// Returns an observable sequence that invokes the specified factory function whenever a new observer subscribes.    
+    let defer ( observableFactory: unit -> IObservable<'TResult> ): IObservable<'TResult> =
+        Observable.Defer(Func<IObservable<'TResult>> observableFactory )
 
 
-//    static member DefaultIfEmpty : source:IObservable<'TSource> * defaultValue:'TSource -> IObservable<'TSource>
-//    static member DefaultIfEmpty : source:IObservable<'TSource> -> IObservable<'TSource>
-//    static member Defer : observableFactory:Func<IObservable<'TResult>> -> IObservable<'TResult>
-//    static member Defer : observableFactoryAsync:Func<Threading.Tasks.Task<IObservable<'TResult>>> -> IObservable<'TResult>
-//    static member Delay : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
-//    static member Delay : source:IObservable<'TSource> * dueTime:DateTimeOffset -> IObservable<'TSource>
-//    static member Delay : source:IObservable<'TSource> * delayDurationSelector:Func<'TSource,IObservable<'TDelay>> -> IObservable<'TSource>
-//    static member Delay : source:IObservable<'TSource> * subscriptionDelay:IObservable<'TDelay> * delayDurationSelector:Func<'TSource,IObservable<'TDelay>> -> IObservable<'TSource>
-//    static member DelaySubscription : source:IObservable<'TSource> * dueTime:DateTimeOffset -> IObservable<'TSource>
-//    static member DelaySubscription : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
+    /// Time shifts the observable sequence by the specified relative time duration.
+    /// The relative time intervals between the values are preserved.
+    let delay ( dueTime:TimeSpan ) ( source:IObservable<'TSource> ): IObservable<'TSource>=
+        Observable.Delay(source, dueTime)
+
+
+    /// Time shifts the observable sequence to start propagating notifications at the specified absolute time.
+    /// The relative time intervals between the values are preserved.
+    let delayUnitl  ( dueTime:DateTimeOffset ) ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.Delay(source, dueTime )
+        
+
+    ///Time shifts the observable sequence based on a delay selector function for each element.
+    let delayMap ( delayDurationSelector:'TSource -> IObservable<'TDelay> )  ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Delay( source, Func<'TSource,IObservable<'TDelay>> delayDurationSelector)
+
+
+    /// Time shifts the observable sequence based on a subscription delay and a delay selector function for each element.
+    let delayMapFilter  ( delayDurationSelector:'TSource -> IObservable<'TDelay>)( subscriptionDelay:IObservable<'TDelay>)  ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.Delay(source, subscriptionDelay, Func<'TSource, IObservable<'TDelay>> delayDurationSelector)
+
+
+
+    let DelaySubscription ( source:IObservable<'TSource> )( dueTime:TimeSpan) : IObservable<'TSource> =
+        Observable.DelaySubscription( source, dueTime )
+
+
+    let DelaySubscriptionUntil ( source:IObservable<'TSource> )( dueTime:DateTimeOffset): IObservable<'TSource> =
+        Observable.DelaySubscription( source, dueTime )
+
+
 
 
 
@@ -564,8 +594,6 @@ module Observable =
         Observable.Merge(sources)
 
 
-
-
     /// Merges elements from all inner observable sequences 
     /// into a single  observable sequence.
     let mergeInner (sources:IObservable<IObservable<'T>>) =
@@ -590,15 +618,14 @@ module Observable =
         Observable.Merge(sources, maxConcurrent)
 
 
-
     /// Merge results from all source tasks into a single observable sequence
     let mergeTasks (sources:IObservable<Tasks.Task<'T>>) =
         Observable.Merge(sources)
 
 
+    /// Returns the maximum element in an observable sequence.
     let maxOf (source:IObservable<'T>) = 
         Observable.Max( source )
-
 
 
     /// Returns an enumerable sequence whose sequence whose enumeration returns the 
@@ -1001,8 +1028,6 @@ module Observable =
             observable.Subscribe(Action<_> onNext, Action onCompleted)
     
 
-
-
     /// Subscribes to the observable with all three callbacks
     let subscribeWithCallbacks onNext onError onCompleted (observable: IObservable<'T>) =
         observable.Subscribe(Observer.Create(Action<_> onNext, Action<_> onError, Action onCompleted))
@@ -1013,10 +1038,12 @@ module Observable =
         observable.Subscribe observer
 
 
-//    static member SubscribeOn : source:IObservable<'TSource> * context:Threading.SynchronizationContext -> IObservable<'TSource>
-//
-//
-//
+    /// Wraps the source sequence in order to run its subscription and unsubscription logic 
+    /// on the specified scheduler. This operation is not commonly used;  This only performs 
+    /// the side-effects of subscription and unsubscription on the specified scheduler.
+    ///  In order to invoke observer callbacks on a scheduler, use 'observeOn'
+    let subscribeOn  (source:IObservable<'TSource>) (context:Threading.SynchronizationContext) : IObservable<'TSource> =
+        Observable.SubscribeOn( source, context )
 
 
     /// Transforms an observable sequence of observable sequences into an 
@@ -1033,12 +1060,18 @@ module Observable =
     /// Synchronizes the observable sequence so that notifications cannot be delivered concurrently
     /// this voerload is useful to "fix" and observable sequence that exhibits concurrent 
     /// callbacks on individual observers, which is invalid behavior for the query processor
-    let synchronize  source = 
+    let synchronize  source : IObservable<'Source>= 
         Observable.Synchronize( source )
 
 
-//    static member Synchronize : source:IObservable<'TSource> -> IObservable<'TSource>
-//    static member Synchronize : source:IObservable<'TSource> * gate:obj -> IObservable<'TSource>
+    /// Synchronizes the observable sequence such that observer notifications 
+    /// cannot be delivered concurrently, using the specified gate object.This 
+    /// overload is useful when writing n-ary query operators, in order to prevent 
+    /// concurrent callbacks from different sources by synchronizing on a common gate object.
+    let synchronizeGate (gate:obj)  (source:IObservable<'Source>): IObservable<'Source> =
+        Observable.Synchronize( source, gate )
+
+
 
     /// Takes n elements
     let take (n: int) source = Observable.Take(source, n)    
@@ -1171,10 +1204,16 @@ module Observable =
 
 
 //
-//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> -> IObservable<Linq.ILookup<'TKey,'TSource>>
-//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<Linq.ILookup<'TKey,'TSource>>
-//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> -> IObservable<Linq.ILookup<'TKey,'TElement>>
-//    static member ToLookup : source:IObservable<'TSource> * keySelector:Func<'TSource,'TKey> * elementSelector:Func<'TSource,'TElement> * comparer:Collections.Generic.IEqualityComparer<'TKey> -> IObservable<Linq.ILookup<'TKey,'TElement>>
+//   let ToLookup ( source:IObservable<'TSource> )( keySelector:Func<'TSource,'TKey> ) : IObservable<Linq.ILookup<'TKey,'TSource>> =
+
+
+//   let ToLookup ( source:IObservable<'TSource> )( keySelector:Func<'TSource,'TKey> ) ( comparer:Collections.Generic.IEqualityComparer<'TKey> ) :-> IObservable<Linq.ILookup<'TKey,'TSource>>
+
+
+//   let ToLookup ( source:IObservable<'TSource> )( keySelector:Func<'TSource,'TKey> ) ( elementSelector:Func<'TSource,'TElement> ): IObservable<Linq.ILookup<'TKey,'TElement>>
+
+
+//   let ToLookup ( source:IObservable<'TSource> )( keySelector:Func<'TSource,'TKey> ) ( elementSelector:Func<'TSource,'TElement> ) ( comparer:IEqualityComparer<'TKey>) : IObservable<Linq.ILookup<'TKey,'TElement>>=
 //
 
     /// Converts a seq into an observable
@@ -1219,8 +1258,12 @@ module Observable =
         Observable.Window(source, windowOpenings, Func<_,_> windowClosingSelector)
 
 //
-//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan * timeShift:TimeSpan -> IObservable<IObservable<'TSource>>
-//    let Window ( source:IObservable<'TSource> )( windowClosingSelector:Func<IObservable<'TWindowClosing>> -> IObservable<IObservable<'TSource>>
+//    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan )( timeShift:TimeSpan ) : IObservable<IObservable<'TSource>> =
+
+
+//    let Window ( source:IObservable<'TSource> )( windowClosingSelector:Func<IObservable<'TWindowClosing>> ) : IObservable<IObservable<'TSource>> =
+
+
 //    let Window ( source:IObservable<'TSource> )( timeSpan:TimeSpan -> IObservable<IObservable<'TSource>>
 //    let Window ( source:IObservable<'TSource> )( windowBoundaries:IObservable<'TWindowBoundary> -> IObservable<IObservable<'TSource>>
 //    let Window ( source:IObservable<'TSource> )( count:int * skip:int -> IObservable<IObservable<'TSource>>
@@ -1231,30 +1274,33 @@ module Observable =
 //
 
 
-
-  //  static member Zip : first:IObservable<'TSource1> * second:IObservable<'TSource2> * resultSelector:Func<'TSource1,'TSource2,'TResult> -> IObservable<'TResult>
+    /// Merges two observable sequences into one observable sequence by combining their elements in a pairwise fashion.
+    let zip ( first:IObservable<'TSource1>)( second:IObservable<'TSource2>) ( resultSelector:'TSource1 -> 'TSource2 -> 'TResult) : IObservable<'TResult> =
+        Observable.Zip( first, second, Func<'TSource1,'TSource2,'TResult> resultSelector)
 
     /// Merges two observable sequences into one observable sequence by 
     /// combining their elements in a pairwise fashion.
-    let zip ( sources:IObservable<'TSource> []) : IObservable<IList<'TSource>> =
+
+
+    let zipSeq ( sources:seq<IObservable<'TSource>>) : IObservable<IList<'TSource>> = 
+        Observable.Zip( sources )
+
+    let zipArray ( sources:IObservable<'TSource> []) : IObservable<IList<'TSource>> =
         Observable.Zip( sources )
  
 
-    let zip1 ( resultSelector: IList<'S> ->'R) ( sources: seq<IObservable<'S>>)
-             : IObservable<'R> =
+    let zipMap ( resultSelector: IList<'S> ->'R) ( sources: seq<IObservable<'S>>)  : IObservable<'R> =
         Observable.Zip( sources, Func<IList<'S>,'R> resultSelector)
  
 
  
 
     let zip2 ( resultSelector: 'TSource1 -> 'TSource2 -> 'TResult         )
-             ( second        : Collections.Generic.IEnumerable<'TSource2> )
+             ( second        : seq<'TSource2> )
              ( first         : IObservable<'TSource1>                     ) : IObservable<'TResult> =
         Observable.Zip(first, second, Func<_,_,_> resultSelector )
  
 
 
-    let zip3 ( sources:seq<IObservable<'TSource>>) : IObservable<IList<'TSource>> = 
-        Observable.Zip( sources )
 
            
