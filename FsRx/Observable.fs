@@ -299,82 +299,100 @@ module Observable =
         Observable.Delay(source, dueTime )
         
 
-    ///Time shifts the observable sequence based on a delay selector function for each element.
+    /// Time shifts the observable sequence based on a delay selector function for each element.
     let delayMap ( delayDurationSelector:'TSource -> IObservable<'TDelay> )  ( source:IObservable<'TSource> ): IObservable<'TSource> =
         Observable.Delay( source, Func<'TSource,IObservable<'TDelay>> delayDurationSelector)
 
 
     /// Time shifts the observable sequence based on a subscription delay and a delay selector function for each element.
-    let delayMapFilter  ( delayDurationSelector:'TSource -> IObservable<'TDelay>)( subscriptionDelay:IObservable<'TDelay>)  ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+    let delayMapFilter  ( delayDurationSelector:'TSource -> IObservable<'TDelay>)
+                        ( subscriptionDelay:IObservable<'TDelay>)  
+                        ( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.Delay(source, subscriptionDelay, Func<'TSource, IObservable<'TDelay>> delayDurationSelector)
 
 
-
+    /// Time shifts the observable sequence by delaying the subscription with the specified relative time duration.
     let delaySubscription ( dueTime:TimeSpan) ( source:IObservable<'TSource> ): IObservable<'TSource> =
         Observable.DelaySubscription( source, dueTime )
 
 
+    /// Time shifts the observable sequence by delaying the subscription to the specified absolute time.
     let delaySubscriptionUntil ( dueTime:DateTimeOffset) ( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.DelaySubscription( source, dueTime )
 
 
-
-
-
+    /// Dematerializes the explicit notification values of an observable sequence as implicit notifications.
     let dematerialize source = 
         Observable.Dematerialize(source)
 
 
-
-
-
     /// Returns an observable sequence that only contains distinct elements 
-    let distinct source = 
-        Observable.Distinct(source)
+    let distinct ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.Distinct( source )
 
 
-    let Distinct1 ( keySelector:Func<'TSource,'TKey> )( comparer:IEqualityComparer<'TKey>)( source:IObservable<'TSource> ) : IObservable<'TSource> =
-        Observable.Distinct( source, keySelector, comparer )
-
-
-    let Distinct2 ( keySelector:Func<'TSource,'TKey> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
+    /// Returns an observable sequence that contains only distinct elements according to the keySelector.
+    let distinctKey ( keySelector:Func<'TSource,'TKey> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.Distinct( source, keySelector)
 
 
-    let Distinct3 ( comparer:IEqualityComparer<'TSource> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
+    /// Returns an observable sequence that contains only distinct elements according to the comparer.
+    let distinctCompare ( comparer:IEqualityComparer<'TSource> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.Distinct( source, comparer )
 
 
-    let Distinct4 ( source:IObservable<'TSource> ) : IObservable<'TSource> =
-        Observable.Distinct( source )
+    /// Returns an observable sequence that contains only distinct elements according to the keySelector and the comparer.
+    let distinctKeyCompare ( keySelector:Func<'TSource,'TKey> )( comparer:IEqualityComparer<'TKey>)( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.Distinct( source, keySelector, comparer )
+       
 
     /// Returns an observable sequence that only contains distinct contiguous elements 
-    let distinctUntilChanged source = 
+    let distinctUntilChanged ( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.DistinctUntilChanged(source)
 
 
-    let distinctUntilChanged ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+    /// Returns an observable sequence that contains only distinct contiguous elements according to the keySelector.
+    let distinctUntilChangedKey ( keySelector:Func<'TSource,'TKey> )( source:IObservable<'TSource> )  : IObservable<'TSource> =
+        Observable.DistinctUntilChanged( source, keySelector )
+        
+
+    /// Returns an observable sequence that contains only distinct contiguous elements according to the comparer.
+    let distinctUntilChangedCompare ( comparer:IEqualityComparer<'Source> )( source:IObservable<'Source> ) : IObservable<'Source> =
+        Observable.DistinctUntilChanged( source, comparer )
 
 
-    let distinctUntilChanged  ( keySelector:Func<'TSource,'TKey> )( comparer:IEqualityComparer<'TKey> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
+    /// Returns an observable sequence that contains only distinct contiguous elements according to the keySelector and the comparer.
+    let distinctUntilChangedKeyCompare  ( keySelector:Func<'TSource,'TKey> )( comparer:IEqualityComparer<'TKey> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.DistinctUntilChanged( source, keySelector, comparer )
 
 
-    let distinctUntilChanged ( keySelector:Func<'TSource,'TKey> )( source:IObservable<'TSource> )  : IObservable<'TSource> =
+    /// Invokes an action for each element in the observable sequence, and propagates all observer 
+    /// messages through the result sequence. This method can be used for debugging, logging, etc. of query 
+    /// behavior by intercepting the message stream to run arbitrary actions for messages on the pipeline.
+    let iter ( onNext ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source, Action<'TSource> onNext )
+   
 
-
-    let doOBV ( onNext:Action<'TSource> )( onError:Action<exn> ) (onCompleted:Action ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+    /// Invokes an action for each element in the observable sequence and invokes an action 
+    /// upon graceful termination of the observable sequence. This method can be used for debugging,
+    ///  logging, etc. of query behavior by intercepting the message stream to run arbitrary
+    /// actions for messages on the pipeline.
+    let iterEnd ( onNext )( onCompleted ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source, Action<'TSource> onNext, Action onCompleted )   
+   
+    
+    let iter ( onNext )( onError:Action<exn> ) ( onCompleted:Action ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        
 
 
     let doOBV ( onNext:Action<'TSource> )( onError:Action<exn> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
 
 
-    let doOBV ( onNext:Action<'TSource> )( onCompleted:Action ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
 
 
     let doOBV ( observer:IObserver<'TSource> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
 
 
-    let doOBV ( onNext:Action<'TSource> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
 
 
     let doWhile ( condition:Func<bool> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
@@ -1279,16 +1297,35 @@ module Observable =
     let take (n: int) source = Observable.Take(source, n)    
 
 
+
+
+    let take           ( count:int )( source:IObservable<'TSource> ): IObservable<'TSource> =
+
+
+
+    let take           ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<'TSource> =
+
+
     /// Returns a specified number of contiguous elements from the end of an obserable sequence
     let takeLast (count:int) source = 
         Observable.TakeLast(source, count)
 
-    static member Take : source:IObservable<'TSource> * count:int -> IObservable<'TSource>
-    static member Take : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<'TSource>
-    static member TakeLast : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<'TSource>
-    static member TakeLast : source:IObservable<'TSource> * count:int -> IObservable<'TSource>
-    static member TakeLastBuffer : source:IObservable<'TSource> * duration:TimeSpan -> IObservable<Collections.Generic.IList<'TSource>>
-    static member TakeLastBuffer : source:IObservable<'TSource> * count:int -> IObservable<Collections.Generic.IList<'TSource>>
+
+
+    let takeLast      ( duration:TimeSpan ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+
+
+
+    let takeLast      ( count:int ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+
+
+
+    let takeLastBuffer ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
+
+
+
+    let takeLastBuffer ( count:int )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
+
 
 
     /// Returns the elements from the source observable sequence until the other produces and element
@@ -1504,6 +1541,7 @@ module Observable =
     let window ( windowClosingSelector ) ( source:IObservable<'TSource> ) : IObservable<IObservable<'TSource>> =
         Observable.Window( source, Func<IObservable<'TWindowClosing>> windowClosingSelector)
 
+
     /// Projects each element of an observable sequence into consecutive non-overlapping windows 
     /// which are produced based on timing information.
     let windowTimeSpan ( timeSpan:TimeSpan )( source:IObservable<'TSource> ) : IObservable<IObservable<'TSource>> =
@@ -1580,8 +1618,8 @@ module Observable =
     /// Merges an observable sequence and an enumerable sequence into one 
     /// observable sequence by using the selector function.
     let zipWithSeq ( resultSelector: 'TSource1 -> 'TSource2 -> 'TResult   )
-             ( second        : seq<'TSource2>                       )
-             ( first         : IObservable<'TSource1>               ) : IObservable<'TResult> =
+                   ( second        : seq<'TSource2>                       )
+                   ( first         : IObservable<'TSource1>               ) : IObservable<'TResult> =
         Observable.Zip(first, second, Func<_,_,_> resultSelector )
  
 
