@@ -1042,7 +1042,7 @@ module Observable =
         Observable.Replay( source )   
 
 
-//    let replay  ( selector:Func<IObservable<'TSource>,IObservable<'TResult>>)( bufferSize:int ) ( window:TimeSpan ) ( source:IObservable<'TSource>): IObservable<'TResult> =
+//    let replay  ( selector:Func<IObservable<'TSource>, IObservable<'TResult>>)( bufferSize:int ) ( window:TimeSpan ) ( source:IObservable<'TSource>): IObservable<'TResult> =
 //
 //
 //    let replay  ( bufferSize:int )( window:TimeSpan )( source:IObservable<'TSource>) : Subjects.IConnectableObservable<'TSource> =
@@ -1256,8 +1256,8 @@ module Observable =
         Observable.SkipWhile ( source, Func<'TSource,int,bool> predicate)
 
 
-    let startWith  param  source = 
-        Observable.StartWith( source, param )
+//    let startWith  param  source = 
+//        Observable.StartWith( source, param )
 
 
       /// Prepends a sequence of values to an observable sequence.   
@@ -1331,34 +1331,26 @@ module Observable =
     let synchronizeGate (gate:obj)  (source:IObservable<'Source>): IObservable<'Source> =
         Observable.Synchronize( source, gate )
 
+    /// Takes n elements (from the beginning of an observable sequence? )
+    let take (n: int) source : IObservable<'TSource> = 
+        Observable.Take(source, n)    
 
-
-    /// Takes n elements
-    let take (n: int) source = Observable.Take(source, n)    
-
-
-//
-//
-//    let take           ( count:int )( source:IObservable<'TSource> ): IObservable<'TSource> =
-//
-//
-//
-//    let take           ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<'TSource> =
-//
-//
     /// Returns a specified number of contiguous elements from the end of an obserable sequence
-    let takeLast (count:int) source = 
+    let takeLast ( count:int ) source = 
         Observable.TakeLast(source, count)
 
-//
-//
-//    let takeLast      ( duration:TimeSpan ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-//
-//
-//
-//    let takeLast      ( count:int ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-//
-//
+    let takeLast2 ( count:int ) ( scheduler:Concurrency.IScheduler) (source:IObservable<'TSource>) =
+        Observable.TakeLast( source, count, scheduler )
+
+    let takeLast3 ( duration:TimeSpan ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.TakeLast( source, duration )
+
+    let takeLast4 ( duration:TimeSpan ) ( scheduler: Concurrency.IScheduler) (source:IObservable<'TSource>) =
+        Observable.TakeLast( source, duration, scheduler )
+
+    let takeLast5 ( duration:TimeSpan ) ( timerscheduler: Concurrency.IScheduler ) ( loopscheduler: Concurrency.IScheduler ) (source:IObservable<'TSource>) =
+        Observable.TakeLast( source, duration, timerscheduler, loopscheduler )
+
     /// Returns a list with the elements within the specified duration from the end of the observable source sequence.
     let takeLastBuffer ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
         Observable.TakeLastBuffer( source, duration )
@@ -1368,9 +1360,6 @@ module Observable =
     let takeLastBufferCount ( count:int )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
         Observable.TakeLastBuffer( source, count )
 
-
-//
-//
 //
 //    /// Returns the elements from the source observable sequence until the other produces and element
 //    let takeUntil<'Other,'Source> other source =
@@ -1405,13 +1394,11 @@ module Observable =
 
 
     let throw ( except:exn ) : IObservable<'TResult> =
-        Observable.Throw(except )
+        Observable.Throw( except )
 
-
-//    let throw ( exception:exn ) witness:'TResult -> IObservable<'TResult>
-//
-//
-
+//    Radioactive Exception Function, Do Not Touch
+//    let throwWithWitness ( except:exn ) ( witness:obj) : IObservable<obj> =
+//        Observable.Throw( except, witness )
 
 
     /// matches when the observable sequence has an available element and 
@@ -1423,14 +1410,12 @@ module Observable =
     /// Records the time interval between consecutive elements in an observable sequence.
     let timeInterval ( source:IObservable<'TSource>) : IObservable<TimeInterval<'TSource>> =
         Observable.TimeInterval( source )
-        
 
     /// Applies a timeout policy to the observable sequence based on a timeout duration computed 
     /// for each element.   If the next element isn't received within the computed duration starting
     /// from its predecessor, the other observable sequence is used to produce future messages from that point on.
     let timeout ( durationSelector )( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.Timeout( source, Func<'TSource,IObservable<'TTimeout>> durationSelector   )
-
 
     /// Applies a timeout policy for each element in the observable sequence.
     /// If the next element isn't received within the specified timeout duration starting from its 
@@ -1441,9 +1426,38 @@ module Observable =
                         ( source:IObservable<'TSource>  )                            : IObservable<'TSource> =
         Observable.Timeout( source, firstTimeout, durationSelector, other )
 
-//
-//    let timeout ( dueTime:DateTimeOffset )( other:IObservable<'TSource> )( source:IObservable<'TSource> ) : IObservable<'TSource>=
-//        Observable.Timeout( source, )
+    let timeout3 ( timeout:System.IObservable<'TTimeout> ) 
+                ( durationSelector ) 
+                ( source:IObservable<'TSource> ) =
+        Observable.Timeout( source, System.Func<'TSource, IObservable<'TTimouet>> durationSelector)
+
+    let timeout4 ( timeout:System.IObservable<'TTimeout> ) 
+                ( durationSelector )
+                ( other:IObservable<'TSource>) 
+                ( source:IObservable<'TSource> ) =
+        Observable.Timeout( source, System.Func<'TSource, IObservable<'TTimeout>> durationSelector, other)
+
+    let timeout5 ( timeout:System.DateTimeOffset ) ( source:IObservable<'TSource>) =
+        Observable.Timeout( source, timeout)
+
+    let timeout6 ( timeout:System.DateTimeOffset ) ( other:IObservable<'TSource>) ( source:IObservable<'TSource>) =
+        Observable.Timeout( source, timeout, other)
+
+    let timeout7 ( timeout:System.DateTimeOffset ) ( other:IObservable<'TSource>) ( source:IObservable<'TSource>) =
+        Observable.Timeout( source, timeout, other)
+
+    let timeout8 ( timeout:TimeSpan ) ( source:IObservable<'TSource> ) =
+        Observable.Timeout( source, timeout)
+        
+    let timeout9 ( timeout:TimeSpan ) ( other:IObservable<'TSource> ) ( source:IObservable<'TSource> ) =
+        Observable.Timeout( source, timeout, other)
+
+//    let timeout3 ( dueTime:DateTimeOffset )( other:IObservable<'TSource> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
+//        Observable.Timeout( source, dueTime, other)
+
+
+
+
 //
 //
 //    let timeout ( dueTime:DateTimeOffset ) ( source:IObservable<'TSource> ): IObservable<'TSource>=
@@ -1464,6 +1478,9 @@ module Observable =
 //
 //    let timeout ( dueTime:TimeSpan ) ( other:IObservable<'TSource> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
 //        Observable.Timeout( source, )
+
+//    #endregion
+
 
 
     /// Returns an observable sequence that produces a single value at the specified absolute due time.
