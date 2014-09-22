@@ -11,6 +11,7 @@ open System.Threading
 open System.Reactive
 open System.Reactive.Linq
 open System.Collections.Generic
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
 
 
@@ -406,6 +407,10 @@ module Observable =
         Observable.Any(source, predicate)
 
 
+    /// Filters the observable elements of a sequence based on a predicate 
+    let filter  (predicate:'T->bool) (source:IObservable<'T>) = 
+        Observable.Where( source, predicate )
+
 
     /// Filters the observable elements of a sequence based on a predicate by 
     /// incorporating the element's index
@@ -772,6 +777,9 @@ module Observable =
         Observable.LongCount(source, predicate)    
 
 
+    /// Maps the given observable with the given function
+    let map f source = Observable.Select(source, Func<_,_>(f))   
+
 
     /// Maps the given observable with the given function and the 
     /// index of the element
@@ -794,6 +802,8 @@ module Observable =
         Observable.Materialize( source )
 
     
+    /// Merges the two observables
+    let merge (second: IObservable<'T>) (first: IObservable<'T>) = Observable.Merge(first, second)
 
 
     /// Merges all the observable sequences into a single observable sequence.
@@ -922,6 +932,14 @@ module Observable =
 //    let onErrorResumeNext ( sources:seq<IObservable<'TSource>> ) : IObservable<'TSource> =
 //        Observable.OnErrorResumeNext( sources )
         
+
+    let pairwise (source:IObservable<'a>) : IObservable<'a*'a> = 
+        Observable.pairwise( source )
+
+
+    let partition predicate (source:IObservable<'T>) = 
+        Observable.partition( predicate source )
+
 
 
     /// Iterates through the observable and performs the given side-effect
@@ -1084,12 +1102,12 @@ module Observable =
 
 
 
-//    /// Applies an accumulator function over an observable sequence
-//    /// and returns each intermediate result. The specified seed value 
-//    /// is used as the initial accumulator value. For aggreagation behavior
-//    /// without intermediate results use 'aggregate'
-//    let scan (collector:'a->'b->'a) state source =
-//        Observable.Scan(source,  state, Func<'a,'b,'a>collector )
+    /// Applies an accumulator function over an observable sequence
+    /// and returns each intermediate result. The specified seed value 
+    /// is used as the initial accumulator value. For aggreagation behavior
+    /// without intermediate results use 'aggregate'
+    let scan (collector:'a->'b->'a) state source =
+        Observable.Scan(source,  state, Func<'a,'b,'a>collector )
 
 //    static member Scan : source:IObservable<'TSource> * accumulator:Func<'TSource,'TSource,'TSource> -> IObservable<'TSource>
 //    static member Scan : source:IObservable<'TSource> * seed:'TAccumulate * accumulator:Func<'TAccumulate,'TSource,'TAccumulate> -> IObservable<'TAccumulate>
@@ -1253,7 +1271,9 @@ module Observable =
 //    static member StartWith : source:IObservable<'TSource> * values:'TSource [] -> IObservable<'TSource>
 
 
-
+    /// Subscribes to the Observable with a next fuction.
+    let subscribe(onNext: 'T -> unit) (observable: IObservable<'T>) =
+          observable.Subscribe(Action<_> onNext)
 
 
     /// Subscribes to the Observable with a next and an error-function.
