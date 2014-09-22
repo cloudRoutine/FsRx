@@ -1452,57 +1452,22 @@ module Observable =
     let timeout9 ( timeout:TimeSpan ) ( other:IObservable<'TSource> ) ( source:IObservable<'TSource> ) =
         Observable.Timeout( source, timeout, other)
 
-//    let timeout3 ( dueTime:DateTimeOffset )( other:IObservable<'TSource> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
-//        Observable.Timeout( source, dueTime, other)
 
-
-
-
-//
-//
-//    let timeout ( dueTime:DateTimeOffset ) ( source:IObservable<'TSource> ): IObservable<'TSource>=
-//        Observable.Timeout( source, )
-//
-//
-//    let timeout ( timeoutDurationSelector:Func<'TSource,IObservable<'TTimeout>> )( other:IObservable<'TSource> )( source:IObservable<'TSource> ) : IObservable<'TSource>=
-//        Observable.Timeout( source, )
-//
-//
-//    let timeout ( firstTimeout:IObservable<'TTimeout> )( timeoutDurationSelector:Func<'TSource,IObservable<'TTimeout>> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
-//        Observable.Timeout( source, )
-//
-//
-//    let timeout ( dueTime:TimeSpan )  ( source:IObservable<'TSource> ): IObservable<'TSource> =
-//        Observable.Timeout( source, )
-//
-//
-//    let timeout ( dueTime:TimeSpan ) ( other:IObservable<'TSource> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-//        Observable.Timeout( source, )
 
 //    #endregion
 
-
-
-    /// Returns an observable sequence that produces a single value at the specified absolute due time.
-    let timer ( dueTime:TimeSpan ) : IObservable<int64> =   
+    let timer ( dueTime:DateTimeOffset ) : IObservable<int64> =
         Observable.Timer( dueTime )
 
+    let timer2 ( dueTime:DateTimeOffset) ( period:TimeSpan ) : IObservable<int64> =
+        Observable.Timer( dueTime, period)
 
+    /// Returns an observable sequence that produces a single value at the specified absolute due time.
+    let timer3 ( dueTime:TimeSpan ) : IObservable<int64> =   
+        Observable.Timer( dueTime )
 
-//    let timer ( dueTime:DateTimeOffset )( period:TimeSpan ) : IObservable<int64> = 
-//        Observable.Timer( dueTime, period )
-//
-//
-//    let timer ( dueTime:TimeSpan )( period:TimeSpan ) : IObservable<int64> = 
-//        Observable.Timer( dueTime, period )
-//
-//
-//    let timer ( dueTime:DateTimeOffset ) : IObservable<int64> = 
-//        Observable.Timer( dueTime )
-//
-//
-
-
+    let timer5 ( dueTime:TimeSpan, period:TimeSpan ) : IObservable<int64> =
+        Observable.Timer( dueTime, period)
 
     let timestamp ( source:IObservable<'TSource> ) : IObservable<Timestamped<'TSource>> =
         Observable.Timestamp( source )
