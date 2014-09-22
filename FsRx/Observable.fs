@@ -15,7 +15,7 @@ open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
 
 
-module Observable =
+module Reactive =
 
 
     /// Applies an accumulator function over an observable sequence, returning the 
