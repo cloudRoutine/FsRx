@@ -366,36 +366,8 @@ module Observable =
         Observable.DistinctUntilChanged( source, keySelector, comparer )
 
 
-    /// Invokes an action for each element in the observable sequence, and propagates all observer 
-    /// messages through the result sequence. This method can be used for debugging, logging, etc. of query 
-    /// behavior by intercepting the message stream to run arbitrary actions for messages on the pipeline.
-    let iter ( onNext ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-        Observable.Do( source, Action<'TSource> onNext )
-   
-
-    /// Invokes an action for each element in the observable sequence and invokes an action 
-    /// upon graceful termination of the observable sequence. This method can be used for debugging,
-    ///  logging, etc. of query behavior by intercepting the message stream to run arbitrary
-    /// actions for messages on the pipeline.
-    let iterEnd ( onNext )( onCompleted ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-        Observable.Do( source, Action<'TSource> onNext, Action onCompleted )   
-   
-    
-    let iter ( onNext )( onError:Action<exn> ) ( onCompleted:Action ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-        
 
 
-    let doOBV ( onNext:Action<'TSource> )( onError:Action<exn> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-
-
-
-
-    let doOBV ( observer:IObserver<'TSource> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
-
-
-
-
-    let doWhile ( condition:Func<bool> )( source:IObservable<'TSource> ) : IObservable<'TSource> =
 
 
     let elementAt  ( index:int ) ( source:IObservable<'TSource>): IObservable<'TSource> =
@@ -543,8 +515,8 @@ module Observable =
         Observable.Generate( initialstate, condition, iterator, selector )
 
 
-    let generate ( initialState:'TState )( condition:Func<'TState,bool> )( iterate:Func<'TState,'TState> )( resultSelector:Func<'TState,'TResult> )( timeSelector:Func<'TState,TimeSpan> ) : IObservable<'TResult> =
-        Observable.Generate( initialstate, condition, iterator, selector )
+    let generate ( initialState:'TState )( condition )( iterate )( resultSelector )( timeSelector ) : IObservable<'TResult> =
+        Observable.Generate( initialstate, Func<'TState,bool> condition,Func<'TState,'TState> iterate, Func<'TState,'TResult>resultSelector, Func<'TState,TimeSpan>timeSelector )
 
 
     let generate    ( initialState:'TState  )
@@ -709,6 +681,46 @@ module Observable =
 
     /// Determines whether the given observable is empty 
     let isEmpty source = source = Observable.Empty()
+
+
+    /// Invokes an action for each element in the observable sequence, and propagates all observer 
+    /// messages through the result sequence. This method can be used for debugging, logging, etc. of query 
+    /// behavior by intercepting the message stream to run arbitrary actions for messages on the pipeline.
+    let iter ( onNext ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source, Action<'TSource> onNext )
+   
+
+    /// Invokes an action for each element in the observable sequence and invokes an action 
+    /// upon graceful termination of the observable sequence. This method can be used for debugging,
+    ///  logging, etc. of query behavior by intercepting the message stream to run arbitrary
+    /// actions for messages on the pipeline.
+    let iterEnd ( onNext )( onCompleted ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source, Action<'TSource> onNext, Action onCompleted )   
+
+
+    /// Invokes an action for each element in the observable sequence and invokes an action upon 
+    /// exceptional termination of the observable sequence. This method can be used for debugging, 
+    /// logging, etc. of query behavior by intercepting the message stream to run arbitrary 
+    /// actions for messages on the pipeline.
+    let iterError ( onNext)( onError ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source, Action<'TSource> onNext, Action<exn> onError )   
+    
+
+    /// Invokes an action for each element in the observable sequence and invokes an action 
+    /// upon graceful or exceptional termination of the observable sequence.
+    /// This method can be used for debugging, logging, etc. of query behavior by intercepting 
+    /// the message stream to run arbitrary actions for messages on the pipeline.
+    let iterErrorEnd ( onNext )( onError ) ( onCompleted ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source, Action<'TSource> onNext, Action<exn> onError, Action onCompleted )   
+        
+    /// Invokes the observer's methods for each message in the source sequence.
+    /// This method can be used for debugging, logging, etc. of query behavior by intercepting 
+    /// the message stream to run arbitrary actions for messages on the pipeline.
+    let iterObserver ( observer:IObserver<'TSource> ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
+        Observable.Do( source,observer )   
+
+
+
 
 
     /// Joins together the results from several patterns
@@ -997,6 +1009,10 @@ module Observable =
 
 
     let repeat ( value:'TResult ) : IObservable<'TResult> =
+
+
+    let repeatWhile ( condition)( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.DoWhile( source, Func<bool> condition)
 
 
     let replay  ( selector:Func<IObservable<'TSource>,IObservable<'TResult>>)( bufferSize:int ) ( window:TimeSpan ) ( source:IObservable<'TSource>): IObservable<'TResult> =
@@ -1339,8 +1355,8 @@ module Observable =
 
 
  
-    static member TakeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
-    static member TakeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,int,bool> -> IObservable<'TSource>
+    let takeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
+    let takeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,int,bool> -> IObservable<'TSource>
 
 
 
@@ -1348,17 +1364,16 @@ module Observable =
 
 
 
-    static member Throttle : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
-    static member Throttle : source:IObservable<'TSource> * throttleDurationSelector:Func<'TSource,IObservable<'TThrottle>> -> IObservable<'TSource>
+    let throttle : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
+    let throttle : source:IObservable<'TSource> * throttleDurationSelector:Func<'TSource,IObservable<'TThrottle>> -> IObservable<'TSource>
 
 
 
 
 
 
-    static member Throw : exception:exn -> IObservable<'TResult>
-
-    static member Throw : exception:exn * witness:'TResult -> IObservable<'TResult>
+    let throw ( exception:exn ) -> IObservable<'TResult>
+    let throw ( exception:exn ) witness:'TResult -> IObservable<'TResult>
 
 
 
