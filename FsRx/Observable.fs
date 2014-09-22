@@ -407,8 +407,14 @@ module Observable =
         Observable.Any(source, predicate)
 
 
-    /// Filters the elements of an observable sequence based on a predicate
+    /// Filters the observable elements of a sequence based on a predicate 
     let filter  (predicate:'T->bool) (source:IObservable<'T>) = 
+        Observable.Where( source, predicate )
+
+
+    /// Filters the observable elements of a sequence based on a predicate by 
+    /// incorporating the element's index
+    let filteri (predicate:'T->int->bool) (source:IObservable<'T>)  = 
         Observable.Where( source, predicate )
 
 
@@ -419,13 +425,13 @@ module Observable =
 
 
     /// Returns the first element of an observable sequence
-    let firstAsync (source:IObservable<'T>)  = 
+    let first (source:IObservable<'T>)  = 
         source.FirstAsync()
 
 
     /// Returns the first element of an observable sequence
     /// if it satisfies the predicate
-    let firstAsyncIf predicate (source:IObservable<'T>) =
+    let firstIf predicate (source:IObservable<'T>) =
         source.FirstAsync( predicate )
 
 
@@ -735,12 +741,17 @@ module Observable =
         Observable.When( plans )
 
 
-//    let last  ( predicate ) ( source:IObservable<'TSource> ) : 'TSource =
-//        Observable.LastAsync( source, Func<'TSource,bool> predicate )
 
 
-//    let last ( source:IObservable<'TSource>) : 'TSource =
-//        Observable.LastAsync( source )
+
+    /// Returns the last element of an observable sequence.
+    let last ( source:IObservable<'TSource>) : IObservable<'TSource> =
+        Observable.LastAsync( source )
+
+
+    /// Returns the last element of an observable sequence that satisfies the condition in the predicate 
+    let lastIf  ( predicate ) ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.LastAsync( source, Func<'TSource,bool> predicate )
 
 
 
@@ -1080,8 +1091,6 @@ module Observable =
 //
 
 
-
-
         
     /// Samples the observable at the given interval
     let sample (interval: TimeSpan) source =
@@ -1337,10 +1346,10 @@ module Observable =
 //    let take           ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<'TSource> =
 //
 //
-//    /// Returns a specified number of contiguous elements from the end of an obserable sequence
-//    let takeLast (count:int) source = 
-//        Observable.TakeLast(source, count)
-//
+    /// Returns a specified number of contiguous elements from the end of an obserable sequence
+    let takeLast (count:int) source = 
+        Observable.TakeLast(source, count)
+
 //
 //
 //    let takeLast      ( duration:TimeSpan ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
@@ -1350,12 +1359,16 @@ module Observable =
 //    let takeLast      ( count:int ) ( source:IObservable<'TSource> ): IObservable<'TSource> =
 //
 //
-//
-//    let takeLastBuffer ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
-//
-//
-//
-//    let takeLastBuffer ( count:int )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
+    /// Returns a list with the elements within the specified duration from the end of the observable source sequence.
+    let takeLastBuffer ( duration:TimeSpan )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
+        Observable.TakeLastBuffer( source, duration )
+
+
+    /// Returns a list with the specified number of contiguous elements from the end of an observable sequence.
+    let takeLastBufferCount ( count:int )( source:IObservable<'TSource> ): IObservable<Collections.Generic.IList<'TSource>> =
+        Observable.TakeLastBuffer( source, count )
+
+
 //
 //
 //
@@ -1368,26 +1381,33 @@ module Observable =
 //    let takeUntilTime<'Source> (endtime:DateTimeOffset) source =
 //        Observable.TakeUntil<'Source>(source , endtime )
 //
-//
-// 
-//    let takeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,bool> -> IObservable<'TSource>
-//    let takeWhile : source:IObservable<'TSource> * predicate:Func<'TSource,int,bool> -> IObservable<'TSource>
-//
-//
-//
-//
-//
-//
-//
-//    let throttle : source:IObservable<'TSource> * dueTime:TimeSpan -> IObservable<'TSource>
-//    let throttle : source:IObservable<'TSource> * throttleDurationSelector:Func<'TSource,IObservable<'TThrottle>> -> IObservable<'TSource>
-//
-//
-//
-//
-//
-//
-//    let throw ( exception:exn ) -> IObservable<'TResult>
+
+    /// Returns elements from an observable sequence as long as a specified condition is true.
+    let takeWhile  (predicate) ( source:IObservable<'TSource>): IObservable<'TSource> =
+        Observable.TakeWhile( source, Func<'TSource,bool>predicate )
+
+
+    /// Returns elements from an observable sequence as long as a specified condition is true.
+    /// The element's index is used in the logic of the predicate functi
+    let takeWhilei  ( predicate) (source:IObservable<'TSource>) : IObservable<'TSource> =
+        Observable.TakeWhile( source, Func<'TSource,int,bool> predicate )
+
+
+    /// Ignores elements from an observable sequence which are followed by another element within a specified relative time duration.
+    let throttle  (dueTime:TimeSpan) (source:IObservable<'TSource>): IObservable<'TSource> =
+        Observable.Throttle( source, dueTime )
+
+
+    /// Ignores elements from an observable sequence which are followed by another value within a computed throttle duration
+    let throttleComputed ( source:IObservable<'TSource>) (throttleDurationSelector) : IObservable<'TSource> =
+        Observable.Throttle( source, Func<'TSource,IObservable<'TThrottle>> throttleDurationSelector )
+
+
+
+    let throw ( except:exn ) : IObservable<'TResult> =
+        Observable.Throw(except )
+
+
 //    let throw ( exception:exn ) witness:'TResult -> IObservable<'TResult>
 //
 //
@@ -1400,8 +1420,10 @@ module Observable =
         Observable.Then( source, Func<'Source,'Result> map )
 
 
+    /// Records the time interval between consecutive elements in an observable sequence.
     let timeInterval ( source:IObservable<'TSource>) : IObservable<TimeInterval<'TSource>> =
         Observable.TimeInterval( source )
+        
 
     /// Applies a timeout policy to the observable sequence based on a timeout duration computed 
     /// for each element.   If the next element isn't received within the computed duration starting
@@ -1409,10 +1431,11 @@ module Observable =
     let timeout ( durationSelector )( source:IObservable<'TSource> ) : IObservable<'TSource> =
         Observable.Timeout( source, Func<'TSource,IObservable<'TTimeout>> durationSelector   )
 
+
     /// Applies a timeout policy for each element in the observable sequence.
     /// If the next element isn't received within the specified timeout duration starting from its 
     /// predecessor, the other observable sequence is used to produce future messages from that point on.
-    let timeoutOrOther  ( firstTimeout:IObservable<'TTimeout> )
+    let timeoutOther    ( firstTimeout:IObservable<'TTimeout> )
                         ( durationSelector:Func<'TSource,IObservable<'TTimeout>> )
                         ( other:IObservable<'TSource>)
                         ( source:IObservable<'TSource>  )                            : IObservable<'TSource> =
@@ -1443,6 +1466,10 @@ module Observable =
 //        Observable.Timeout( source, )
 
 
+    /// Returns an observable sequence that produces a single value at the specified absolute due time.
+    let timer ( dueTime:TimeSpan ) : IObservable<int64> =   
+        Observable.Timer( dueTime )
+
 
 
 //    let timer ( dueTime:DateTimeOffset )( period:TimeSpan ) : IObservable<int64> = 
@@ -1457,12 +1484,7 @@ module Observable =
 //        Observable.Timer( dueTime )
 //
 //
-//    let timer ( dueTime:TimeSpan ) : IObservable<int64> =   
-//        Observable.Timer( dueTime )
 
-
-    let takeLastBuffer (count:int) source = 
-        Observable.TakeLastBuffer( source, count )  
 
 
     let timestamp ( source:IObservable<'TSource> ) : IObservable<Timestamped<'TSource>> =
@@ -1551,15 +1573,7 @@ module Observable =
         Observable.Wait( source )
 
 
-    /// Filters the observable elements of a sequence based on a predicate 
-    let where  (predicate:'T->bool) (source:IObservable<'T>) = 
-        Observable.Where( source, predicate )
 
-
-    /// Filters the observable elements of a sequence based on a predicate by 
-    /// incorporating the element's index
-    let wherei (predicate:'T->int->bool) (source:IObservable<'T>)  = 
-        Observable.Where( source, predicate )
 
 
     /// Repeats the given function as long as the specified condition holds
