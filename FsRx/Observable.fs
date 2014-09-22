@@ -503,16 +503,22 @@ module Observable =
         Observable.FromEventPattern( target, eventName )
 
 
+    /// Generates an observable sequence by running a state-driven loop producing the sequence's elements.
     let generate initialState condition iterator resultMap = 
-        Observable.Generate( initialState, condition, iterator, resultMap )
+        Observable.Generate(                            initialState, 
+                                Func<'TState,bool>      condition   , 
+                                Func<'TState,'TState>   iterator    , 
+                                Func<'TState,'TResult>  resultMap   )
 
 
 //    let generate ( initialState:'TState )( condition )( iterator )( resultMap ) : IObservable<'TResult> =
-//        Observable.Generate( initialState, Func<'TState,bool> condition, Func<'TState,'TState> iterator, Func<'TState,'TResult> resultMap )
+//        Observable.Generate( initialState, Func<'TState,bool> condition, Func<'TState,'TState> iterator,  resultMap )
 //
-//
-//    let generate ( initialState:'TState )( condition )( iterate )( resultMap )( timeMap ) : IObservable<'TResult> =
-//        Observable.Generate( initialState, Func<'TState,bool> condition,Func<'TState,'TState> iterate, Func<'TState,'TResult>resultMap, Func<'TState,TimeSpan>timeMap )
+
+
+    /// Generates an observable sequence by running a state-driven and temporal loop producing the sequence's elements.
+    let generateTimed ( initialState:'TState )( condition )( iterate )( resultMap )( genTime ) : IObservable<'TResult> =
+        Observable.Generate( initialState, condition, iterate, Func<'TState,'TResult>resultMap, Func<'TState,TimeSpan>genTime )
 //
 //
 //    let generate    ( initialState:'TState  )
@@ -999,13 +1005,15 @@ module Observable =
         Observable.RefCount ( source )   
 
 
- 
-//    let repeat ( value:'TResult )( repeatCount:int ) : IObservable<'TResult> =
-//
-//
-//    let repeat ( source:IObservable<'TSource> ) : IObservable<'TSource> =
-//
-//
+    /// Repeats the observable sequence a specified number of times.
+    let repeatCount<'TResult> ( value:'TResult )( repeatCount:int ) : IObservable<'TResult> =
+        Observable.Repeat( value, repeatCount )
+
+
+    /// Repeats the observable sequence indefinitely.
+    let repeat<'TSource> ( source:IObservable<'TSource> ) : IObservable<'TSource> =
+        Observable.Repeat<'TSource>( source )
+
 //    let repeat ( repeatCount:int ) ( source:IObservable<'TSource> ) : IObservable<'TSource> =
 //
 //
@@ -1015,7 +1023,14 @@ module Observable =
 //    let repeatWhile ( condition)( source:IObservable<'TSource> ) : IObservable<'TSource> =
 //        Observable.DoWhile( source, Func<bool> condition)
 //
-//
+
+    /// Returns a connectable observable sequence that shares a single subscription to the 
+    /// underlying sequence replaying all notifications.
+    /// This operator is a specialization of Multicast using a Reactive.Subject
+    let replay ( source:IObservable<'TSource>) : Subjects.IConnectableObservable<'TSource> =        
+        Observable.Replay( source )   
+
+
 //    let replay  ( selector:Func<IObservable<'TSource>,IObservable<'TResult>>)( bufferSize:int ) ( window:TimeSpan ) ( source:IObservable<'TSource>): IObservable<'TResult> =
 //
 //
@@ -1030,8 +1045,9 @@ module Observable =
 //
 //    let replay ( selector:Func<IObservable<'TSource>,IObservable<'TResult>> )( source:IObservable<'TSource>)  : IObservable<'TResult> =
 //
-//
-//    let replay ( source:IObservable<'TSource>) : Subjects.IConnectableObservable<'TSource> =                    
+    /// Returns a connectable observable sequence that shares a single subscription 
+    /// to the underlying sequence replaying all notifications.
+         
 //    
 //                                  
 //    let replay ( selector:Func<IObservable<'TSource>,IObservable<'TResult>> ) ( bufferSize:int )( source:IObservable<'TSource>) : IObservable<'TResult> =
@@ -1040,14 +1056,14 @@ module Observable =
 //    let replay ( bufferSize:int )( source:IObservable<'TSource>)  : Subjects.IConnectableObservable<'TSource> =
 //
 //
-//
+    /// Repeats the source observable sequence until it successfully terminates.
+    let retry ( source:IObservable<'TSource>) : IObservable<'TSource> =
+        Observable.Retry( source )
+
 //
 //
 //    let retry (retryCount:int) ( source:IObservable<'TSource>) : IObservable<'TSource> =
 //
-//
-//    let retry ( source:IObservable<'TSource>) : IObservable<'TSource> =
-
 
     ///  Returns an observable sequence that contains a single element.
     let returnObservable ( value:'TResult) : IObservable<'TResult> =
@@ -1091,25 +1107,25 @@ module Observable =
         Observable.SelectMany(source,Func<'Source,int,seq<'Result>> selector )
 
 
-    let selectMany1 selector source = 
-        Observable.SelectMany(source,Func<'Sourec,int,IObservable<'Result>> selector )
-
-    let selectMany2 selector source = 
-        Observable.SelectMany(source,Func<'Source,int,CancellationToken,Tasks.Task<'Result>> selector)
-
-    let selectMany3 selector source = 
-        Observable.SelectMany(source,Func<'Source,int,Tasks.Task<'Result>> selector)
-
-
-    let selectMany4 selector source = 
-        Observable.SelectMany(source, Func<'Source,seq<'Result>> selector)
-
-
-    let selectMany5 selector source = 
-        Observable.SelectMany(source, Func<'S,IObservable<'R>> selector)
-
-    let selectMany6 selector source = 
-        Observable.SelectMany(source, Func<'S,CancellationToken,Tasks.Task<'R>> selector )
+//    let selectMany1 selector source = 
+//        Observable.SelectMany(source,Func<'Sourec,int,IObservable<'Result>> selector )
+//
+//    let selectMany2 selector source = 
+//        Observable.SelectMany(source,Func<'Source,int,CancellationToken,Tasks.Task<'Result>> selector)
+//
+//    let selectMany3 selector source = 
+//        Observable.SelectMany(source,Func<'Source,int,Tasks.Task<'Result>> selector)
+//
+//
+//    let selectMany4 selector source = 
+//        Observable.SelectMany(source, Func<'Source,seq<'Result>> selector)
+//
+//
+//    let selectMany5 selector source = 
+//        Observable.SelectMany(source, Func<'S,IObservable<'R>> selector)
+//
+//    let selectMany6 selector source = 
+//        Observable.SelectMany(source, Func<'S,CancellationToken,Tasks.Task<'R>> selector )
 //
 //
 //    let selectMany    ( source:IObservable<'TSource> )( taskSelector:Func<'TSource,Threading.CancellationToken,Threading.Tasks.Task<'TTaskResult>> )( resultSelector:Func<'TSource,'TTaskResult,'TResult> ): IObservable<'TResult> =
