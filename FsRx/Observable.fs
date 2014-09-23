@@ -188,7 +188,6 @@ module Reactive =
     let collectMergeInit getInitialCollector merge getNewCollector source =
         Observable.Collect( source           , Func<_> getInitialCollector  , 
                             Func<_,_,_> merge, Func<_,_> getNewCollector    )
-//--------------------------------------------------------------------------------------------
 
     // #region CombineLatest Functions
 
@@ -534,16 +533,6 @@ module Reactive =
 
 
 
-
-
-
-
-
-
-
-
-
-
     /// Generates an observable sequence by running a state-driven loop producing the sequence's elements.
     let generate initialState condition iterator resultMap = 
         Observable.Generate(                            initialState, 
@@ -563,6 +552,7 @@ module Reactive =
                                 Func<'State,'State>       iterate          , 
                                 Func<'State,'Result>      resultMap        ,
                                 Func<'State,DateTimeOffset>timeSelector    )
+
 
     /// Generates an observable sequence by running a state-driven and temporal loop producing the sequence's elements.
     let generateTimeSpan ( initialState:'State )( condition )( iterate )( resultMap )( genTime ) : IObservable<'Result> =
@@ -616,8 +606,8 @@ module Reactive =
     /// and selects the resulting elements by using a specified function.
     let groupByCapacityElement
                 ( keySelector           )
-                ( elementSelector       )
                 ( capacity       : int  )
+                ( elementSelector       )
                 ( source         : IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Element>> =
         Observable.GroupBy( source, Func<'Source,'Key> keySelector, Func<'Source,'Element>  elementSelector )
 
@@ -626,8 +616,8 @@ module Reactive =
     /// and comparer and selects the resulting elements by using a specified function.
     let groupByCompareElement
                 ( keySelector      )
-                ( elementSelector  )
                 ( comparer       : IEqualityComparer<'Key>       )
+                ( elementSelector  )
                 ( source         : IObservable<'Source>           ): IObservable<IGroupedObservable<'Key,'Element>> =
         Observable.GroupBy( source,Func<'Source,'Key>  keySelector, Func<'Source,'Element> elementSelector )
 
@@ -637,87 +627,119 @@ module Reactive =
     /// specified key selector function and comparer and selects the resulting elements by using a specified function.
     let groupByCapacityCompareElement
                 ( keySelector      )
-                ( elementSelector  ) 
                 ( capacity        : int                      )
                 ( comparer        : IEqualityComparer<'Key> ) 
+                ( elementSelector  ) 
                 ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
         Observable.GroupBy( source, Func<'Source,'Key>    keySelector, Func<'Source,'Element> elementSelector, capacity, comparer )
 
 
+    ///  Groups the elements of an observable sequence according to a specified key selector function.
+    ///  A duration selector function is used to control the lifetime of groups. When a group expires, 
+    ///  it receives an OnCompleted notification. When a new element with the same
+    ///  key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByUntil( keySelector )
+                    ( durationSelector )
+                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupByUntil( source, Func<'Source,'Key>keySelector,Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> durationSelector )
 
-        
+
+    /// Groups the elements of an observable sequence with the specified initial capacity according to a specified key selector function.
+    /// A duration selector function is used to control the lifetime of groups. When a group 
+    /// expires, it receives an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByCapacityUntil
+                    ( keySelector     )
+                    ( capacity        : int )  
+                    ( durationSelector )
+                    ( source          : IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupByUntil( source, Func<'Source,'Key> keySelector,Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>>  durationSelector, capacity)
 
 
+    /// Groups the elements of an observable sequence according to a specified key selector function and comparer.
+    /// A duration selector function is used to control the lifetime of groups. When a group expires, 
+    /// it receives an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByComparerUntil
+                    ( keySelector)
+                    ( comparer: IEqualityComparer<'Key> ) 
+                    ( durationSelector )
+                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupByUntil( source, Func<'Source,'Key>  keySelector, Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> durationSelector, comparer )
 
 
+    /// Groups the elements of an observable sequence according to a specified key selector function 
+    /// and selects the resulting elements by using a specified function.
+    /// A duration selector function is used to control the lifetime of groups. When a group expires, 
+    /// it receives an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByElementUntil
+                    ( keySelector )
+                    ( elementSelector )
+                    ( durationSelector)
+                    ( source:IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupByUntil( source, Func<'Source,'Key> keySelector, Func<'Source,'Element>elementSelector, Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>>  durationSelector )
 
 
+    /// Groups the elements of an observable sequence with the specified initial capacity according to a specified key selector function and comparer.
+    /// A duration selector function is used to control the lifetime of groups. When a group expires, it receives an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByCapacityComparerUntil    
+                        ( keySelector      )
+                        ( durationSelector ) 
+                        ( capacity : int   ) 
+                        ( comparer : IEqualityComparer<'Key> )
+                        ( source   : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupByUntil(    source, 
+                                    Func<'Source,'Key> keySelector, 
+                                    Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> durationSelector, 
+                                    capacity, 
+                                    comparer                    )
 
 
-    let groupByUntil    ( keySelector     : Func<'Source,'Key> )
-                        ( elementSelector : Func<'Source,'Element> )
-                        ( durationSelector: Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>>)
+    /// Groups the elements of an observable sequence with the specified initial capacity according to a specified key 
+    /// selector function and selects the resulting elements by using a specified function.
+    /// A duration selector function is used to control the lifetime of groups. When a group 
+    /// expires, it receives an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByCapacityElementUntil    
+                        ( keySelector      )
                         ( capacity        : int )                   
+                        ( elementSelector   )
+                        ( durationSelector )
                         ( source          : IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Element>> =
-        Observable.GroupByUntil( source, keySelector, elementSelector, durationSelector, capacity )
+        Observable.GroupByUntil( source, Func<'Source,'Key>keySelector, Func<'Source,'Element>elementSelector, Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>> durationSelector, capacity )
 
 
-//
-//
-//    let groupByUntil    ( keySelector      )
-//                        ( durationSelector ) 
-//                        ( capacity : int   ) 
-//                        ( comparer : IEqualityComparer<'Key> )
-//                        ( source   : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupByUntil(    source, 
-//                                    Func<'Source,'Key> keySelector, 
-//                                    Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> durationSelector, 
-//                                    capacity, 
-//                                    comparer                    )
-//
-//
-//    let groupByUntil( keySelector     : Func<'Source,'Key> )
-//                    ( durationSelector: Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> )
-//                    ( capacity        : int )  
-//                    ( source          : IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupByUntil( source, keySelector, durationSelector, capacity)
-//
-//
-//    let groupByUntil( keySelector:Func<'Source,'Key> )
-//                    ( durationSelector:Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> )
-//                    ( comparer: IEqualityComparer<'Key> ) 
-//                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupByUntil( source, keySelector, durationSelector, comparer )
-//
-//
-//    let groupByUntil( keySelector:Func<'Source,'Key> )
-//                    ( elementSelector:Func<'Source,'Element> )
-//                    ( durationSelector:Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>> )
-//                    ( source:IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupByUntil( source, elementSelector, durationSelector )
-//
-//
-//    let groupByUntil( keySelector:Func<'Source,'Key> )
-//                    ( durationSelector:Func<IGroupedObservable<'Key,'Source>,IObservable<'TDuration>> )
-//                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupByUntil( source, keySelector, durationSelector )
-//
-//
-//    let groupByUntil( keySelector:Func<'Source,'Key> )
-//                    ( elementSelector:Func<'Source,'Element> )
-//                    ( durationSelector:Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>> )
-//                    ( capacity:int )
-//                    ( comparer:IEqualityComparer<'Key>)
-//                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupByUntil( source, keySelector, elementSelector, durationSelector, capacity, comparer )
-//
-//
-//    let groupByUntil( keySelector:Func<'Source,'Key> )
-//                    ( elementSelector:Func<'Source,'Element> )
-//                    ( durationSelector:Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>> )
-//                    ( comparer:Collections.Generic.IEqualityComparer<'Key>) 
-//                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupByUntil( source, keySelector, elementSelector, durationSelector, comparer )
+    /// Groups the elements of an observable sequence according to a specified key selector function and 
+    /// comparer and selects the resulting elements by using a specified function.
+    /// A duration selector function is used to control the lifetime of groups. When a group expires,
+    /// it receives an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByComparerElementUntil
+                    ( keySelector )
+                    ( comparer:Collections.Generic.IEqualityComparer<'Key>) 
+                    ( elementSelector )
+                    ( durationSelector )
+                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupByUntil( source, Func<'Source,'Key> keySelector, Func<'Source,'Element>elementSelector, Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>>durationSelector, comparer )
+
+
+    /// Groups the elements of an observable sequence with the specified initial capacity according to a specified
+    /// key selector function and comparer and selects the resulting elements by using a specified function.
+    /// A duration selector function is used to control the lifetime of groups. When a group expires, it receives 
+    /// an OnCompleted notification. When a new element with the same
+    /// key value as a reclaimed group occurs, the group will be reborn with a new lifetime request.
+    let groupByCapacityComparerElementUntil
+                    ( keySelector )
+                    ( capacity:int )
+                    ( comparer:IEqualityComparer<'Key>)
+                    ( elementSelector )
+                    ( durationSelector )
+                    ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupByUntil( source, Func<'Source,'Key>keySelector, Func<'Source,'Element>elementSelector, Func<IGroupedObservable<'Key,'Element>,IObservable<'TDuration>>durationSelector, capacity, comparer )
+
+
 
 
     /// Correlates the elements of two sequences based on overlapping 
@@ -795,15 +817,9 @@ module Reactive =
         Observable.Do( source,observer )   
 
 
-
-
-
     /// Joins together the results from several patterns
     let joinWhen (plans:seq<Joins.Plan<'T>>): IObservable<'T> = 
         Observable.When( plans )
-
-
-
 
 
     /// Returns the last element of an observable sequence.
@@ -816,13 +832,9 @@ module Reactive =
         Observable.LastAsync( source, Func<'Source,bool> predicate )
 
 
-
-//    let lastOrDefault  ( predicate:Func<'Source,bool> )( source:IObservable<'Source> ) : 'Source =
-//    let lastOrDefault ( source:IObservable<'Source> ) : 'Source =
-
-////////////////////////////////////////////////
-
-
+    /// Returns an enumerable sequence whose enumeration returns the latest observed element in the source observable sequence.
+    /// Enumerators on the resulting sequence will never produce the same element repeatedly, 
+    /// and will block until the next element becomes available.
     let latest source = 
         Observable.Latest( source )
 
@@ -979,31 +991,24 @@ module Reactive =
         Observable.OfType( source )
 
 
-    let onErrorResumeNext sources : IObservable<'Source> = 
-        Observable.OnErrorResumeNext(sources)
+
+    /// Concatenates the second observable sequence to the first observable sequence 
+    /// upon successful or exceptional termination of the first.
+    let onErrorConcat ( second:IObservable<'Source> ) ( first:IObservable<'Source> ) : IObservable<'Source> =
+        Observable.OnErrorResumeNext( first, second )
 
 
-//    let onErrorResumeNext ( second:IObservable<'Source> ) ( first:IObservable<'Source> ) : IObservable<'Source> =
-//        Observable.OnErrorResumeNext( first, second )
-//
-//
-//    let onErrorResumeNext ( sources:IObservable<'Source> [] ) : IObservable<'Source> =
-//        Observable.OnErrorResumeNext( sources )
-//
-//
-//    let onErrorResumeNext ( sources:seq<IObservable<'Source>> ) : IObservable<'Source> =
-//        Observable.OnErrorResumeNext( sources )
+    /// Concatenates all of the specified observable sequences, even if the previous observable sequence terminated exceptionally.
+    let onErrorConcatArray ( sources:IObservable<'Source> [] ) : IObservable<'Source> =
+        Observable.OnErrorResumeNext( sources )
+
+
+    /// Concatenates all observable sequences in the given enumerable sequence, even if the 
+    /// previous observable sequence terminated exceptionally.
+    let onErrorConcatSeq ( sources:seq<IObservable<'Source>> ) : IObservable<'Source> =
+        Observable.OnErrorResumeNext( sources )
+
         
-
-    let pairwise (source:IObservable<'a>) : IObservable<'a*'a> = 
-        Observable.pairwise( source )
-
-
-    let partition predicate (source:IObservable<'T>) = 
-        Observable.partition( predicate source )
-
-
-
     /// Iterates through the observable and performs the given side-effect
     let perform f source =
         let inner x = f x
@@ -1099,48 +1104,67 @@ module Reactive =
 
     /// Returns a connectable observable sequence that shares a single subscription to the 
     /// underlying sequence replaying all notifications.
-    /// This operator is a specialization of Multicast using a Reactive.Subject
     let replay ( source:IObservable<'Source>) : Subjects.IConnectableObservable<'Source> =        
         Observable.Replay( source )   
 
 
-//    let replay  ( selector:Func<IObservable<'Source>, IObservable<'Result>>)( bufferSize:int ) ( window:TimeSpan ) ( source:IObservable<'Source>): IObservable<'Result> =
-//
-//
-//    let replay  ( bufferSize:int )( window:TimeSpan )( source:IObservable<'Source>) : Subjects.IConnectableObservable<'Source> =
-//
-//
-//    let replay  ( selector:Func<IObservable<'Source>,IObservable<'Result>> )( window:TimeSpan )( source:IObservable<'Source>) : IObservable<'Result> =
-//
-//
-//    let replay  ( window:TimeSpan ) ( source:IObservable<'Source>): Subjects.IConnectableObservable<'Source> =
-//
-//
-//    let replay ( selector:Func<IObservable<'Source>,IObservable<'Result>> )( source:IObservable<'Source>)  : IObservable<'Result> =
-//
-    /// Returns a connectable observable sequence that shares a single subscription 
-    /// to the underlying sequence replaying all notifications.
-         
-//    
-//                                  
-//    let replay ( selector:Func<IObservable<'Source>,IObservable<'Result>> ) ( bufferSize:int )( source:IObservable<'Source>) : IObservable<'Result> =
-//
-//
-//    let replay ( bufferSize:int )( source:IObservable<'Source>)  : Subjects.IConnectableObservable<'Source> =
-//
-//
+    /// Returns a connectable observable sequence that shares a single subscription to the underlying sequence 
+    /// replaying notifications subject to a maximum element count for the replay buffer.
+    let replayBuffer ( bufferSize:int )( source:IObservable<'Source>)  : Subjects.IConnectableObservable<'Source> =
+            Observable.Replay( source )  
+
+
+    /// Returns an observable sequence that is the result of invoking the selector on a connectable observable 
+    /// sequence that shares a single subscription to the underlying sequence replaying all notifications.
+    let replayMap ( map )( source:IObservable<'Source>)  : IObservable<'Result> =
+            Observable.Replay( source, Func<IObservable<'Source>,IObservable<'Result>> map )  
+
+
+    /// Returns a connectable observable sequence that shares a single subscription to the underlying sequence 
+    /// replaying notifications subject to a maximum time length for the replay buffer.
+    let replayWindow  ( window:TimeSpan ) ( source:IObservable<'Source>): Subjects.IConnectableObservable<'Source> =
+            Observable.Replay( source )  
+
+
+    /// Returns a connectable observable sequence that shares a single subscription to the underlying sequence
+    //  replaying notifications subject to a maximum time length and element count for the replay buffer.
+    let replayBufferWindow  ( bufferSize:int )( window:TimeSpan )( source:IObservable<'Source>) : Subjects.IConnectableObservable<'Source> =
+            Observable.Replay( source )  
+
+
+    
+    /// Returns an observable sequence that is the result of apply a map to a connectable observable sequence that
+    /// shares a single subscription to the underlying sequence replaying notifications subject to
+    /// a maximum element count for the replay buffer.                              
+    let replayMapBuffer ( map ) ( bufferSize:int )( source:IObservable<'Source>) : IObservable<'Result> =
+            Observable.Replay( source, Func<IObservable<'Source>,IObservable<'Result>>map, bufferSize )  
+
+
+    /// Returns an observable sequence that is the result of apply a map to a connectable observable sequence that
+    /// shares a single subscription to the underlying sequence replaying notifications subject to
+    /// a maximum time length.
+    let replayMapWindow  ( map)( window:TimeSpan )( source:IObservable<'Source>) : IObservable<'Result> =
+            Observable.Replay( source,Func<IObservable<'Source>,IObservable<'Result>>  map, window )  
+
+
+    /// Returns an observable sequence that is the result of apply a map to a connectable observable sequence that
+    /// shares a single subscription to the underlying sequence replaying notifications subject to
+    /// a maximum time length and element count for the replay buffer.
+    let replayMapBufferWindow  ( map )( bufferSize:int ) ( window:TimeSpan ) ( source:IObservable<'Source>): IObservable<'Result> =
+        Observable.Replay( source, Func<IObservable<'Source>, IObservable<'Result>> map, bufferSize, window )  
+
+
     /// Repeats the source observable sequence until it successfully terminates.
     let retry ( source:IObservable<'Source>) : IObservable<'Source> =
         Observable.Retry( source )
 
-//
-//
-//    let retry (retryCount:int) ( source:IObservable<'Source>) : IObservable<'Source> =
-//
 
-    ///  Returns an observable sequence that contains a single element.
-    let returnObservable ( value:'Result) : IObservable<'Result> =
-       Observable.Return(value)
+    /// Repeats the source observable sequence the specified number of times or until it successfully terminates.
+    let retryCount (count:int) ( source:IObservable<'Source>) : IObservable<'Source> =
+        Observable.Retry( source, count )
+
+
+
 
 
     let result x : IObservable<_>=
@@ -1270,54 +1294,62 @@ module Reactive =
 //    let sequenceEqual ( first:IObservable<'Source>  )( second:seq<'Source> )( comparer:IEqualityComparer<'Source> ) : IObservable<bool> =
 //
 //
-//
-//    let single               ( source:IObservable<'Source>) (predicate:Func<'Source,bool> ) : 'Source =
-//    let single               ( source:IObservable<'Source>) : 'Source =
-//
-//    let singleOrDefault      ( source:IObservable<'Source>) : 'Source =
-//    let singleOrDefault      ( source:IObservable<'Source>) (predicate:Func<'Source,bool>) : 'Source =
 
-
-
-
+    /// If the condition evaluates true, select the "thenSource" sequence. Otherwise, return an empty sequence.
     let selectIf condition thenSource =
         Observable.If( Func<bool> condition, thenSource )
 
 
+    /// If the condition evaluates true, select the "thenSource" sequence. Otherwise, select the else source 
     let selectIfElse condition ( elseSource : IObservable<'Result>) 
                                ( thenSource : IObservable<'Result>) =
         Observable.If( Func<bool> condition, thenSource, elseSource )
 
 
-  
+    ///  Returns an observable sequence that contains a single element.
+    let single ( value:'Result) : IObservable<'Result> =
+       Observable.Return(value)
+
+
+    /// Bypasses a specified number of elements in an observable sequence and then returns the remaining elements.
     let skip (count:int) (source:IObservable<'Source>)  : IObservable<'Source> =
         Observable.Skip(source , count)
 
 
+    /// Skips elements for the specified duration from the start of the observable source sequence.
     let skipSpan  (duration:TimeSpan ) (source:IObservable<'Source> ): IObservable<'Source> =
         Observable.Skip(source, duration)
 
 
+    /// Bypasses a specified number of elements at the end of an observable sequence.
     let skipLast  (count:int ) ( source:IObservable<'Source> ): IObservable<'Source> = 
         Observable.SkipLast (source, count )
 
 
+    /// Skips elements for the specified duration from the end of the observable source sequence.
     let skipLastSpan (duration:TimeSpan ) ( source:IObservable<'Source>) : IObservable<'Source> =
         Observable.SkipLast ( source, duration)
 
 
-    let skipUntil ( other:IObservable<'Other> )  ( source:IObservable<'Source> ): IObservable<'Source> =
-        Observable.SkipUntil(source, other )
 
-
-    let skipUntilTime (startTime:DateTimeOffset ) ( source:IObservable<'Source> )  : IObservable<'Source> =
+    /// Skips elements from the observable source sequence until the specified start time.
+    let skipUntil (startTime:DateTimeOffset ) ( source:IObservable<'Source> )  : IObservable<'Source> =
         Observable.SkipUntil(source, startTime )
 
 
+    /// Returns the elements from the source observable sequence only after the other observable sequence produces an element.
+    let skipUntilOther ( other:IObservable<'Other> )  ( source:IObservable<'Source> ): IObservable<'Source> =
+        Observable.SkipUntil(source, other )
+
+
+
+    /// Bypasses elements in an observable sequence as long as a specified condition is true and then returns the remaining elements.
     let skipWhile ( predicate:'Source -> bool ) ( source:IObservable<'Source> ): IObservable<'Source> =
         Observable.SkipWhile ( source, Func<'Source,bool> predicate ) 
 
 
+    /// Bypasses elements in an observable sequence as long as a specified condition is true and then returns the remaining elements.
+    /// The element's index is used in the logic of the predicate functio
     let skipWhilei ( predicate:'Source -> int -> bool)( source:IObservable<'Source> ) : IObservable<'Source> =
         Observable.SkipWhile ( source, Func<'Source,int,bool> predicate)
 
@@ -1591,11 +1623,14 @@ module Reactive =
     
 
     /// Exposes and observable sequence as an object with an Action based .NET event
-    let toEvent source = 
+    let toEvent (source:IObservable<unit>) = 
         Observable.ToEvent(source)
-//
-//    static member ToEvent : source:IObservable<'Source> -> IEvenSource<'Source>
-//    static member ToEvent : source:IObservable<Unit> -> IEvenSource<Unit>
+
+
+    /// Exposes an observable sequence as an object with an Action<'Source> based .NET event.
+    let toEventType ( source:IObservable<'Source> ) : IEventSource<'Source> =
+        Observable.ToEvent(source)
+
     
     /// Creates a list from an observable sequence
     let toList source = 
