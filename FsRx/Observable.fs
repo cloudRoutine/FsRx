@@ -596,10 +596,10 @@ module Reactive =
 
 
     /// Groups the elements of an observable sequence and selects the resulting elements by using a specified function.
-    let groupByElement  ( keySelector     : Func<'Source,'Key>     )
-                        ( elementSelector : Func<'Source,'Element> ) 
-                        ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
-        Observable.GroupBy( source, keySelector, elementSelector )
+    let groupByElement  ( keySelector       )
+                        ( elementSelector   ) 
+                        ( source            ) : IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupBy( source, Func<'Source,'Key>  keySelector, Func<'Source,'Element> elementSelector )
 
 
     /// Groups the elements of an observable sequence with the specified initial capacity 
@@ -615,33 +615,33 @@ module Reactive =
     /// Groups the elements of an observable sequence with the specified initial capacity
     /// and selects the resulting elements by using a specified function.
     let groupByCapacityElement
-                ( keySelector    : Func<'Source,'Key>            )
-                ( elementSelector: Func<'Source,'Element>    )
-                ( capacity       : int                              )
-                ( source         : IObservable<'Source>               ): IObservable<IGroupedObservable<'Key,'Element>> =
-        Observable.GroupBy( source, keySelector, elementSelector )
+                ( keySelector           )
+                ( elementSelector       )
+                ( capacity       : int  )
+                ( source         : IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupBy( source, Func<'Source,'Key> keySelector, Func<'Source,'Element>  elementSelector )
 
 
     /// Groups the elements of an observable sequence according to a specified key selector function 
     /// and comparer and selects the resulting elements by using a specified function.
     let groupByCompareElement
-                ( keySelector    : Func<'Source,'Key>        )
-                ( elementSelector: Func<'Source,'Element> )
+                ( keySelector      )
+                ( elementSelector  )
                 ( comparer       : IEqualityComparer<'Key>       )
                 ( source         : IObservable<'Source>           ): IObservable<IGroupedObservable<'Key,'Element>> =
-        Observable.GroupBy( source, keySelector, elementSelector )
+        Observable.GroupBy( source,Func<'Source,'Key>  keySelector, Func<'Source,'Element> elementSelector )
 
 
 
     /// Groups the elements of an observable sequence with the specified initial capacity according to a 
     /// specified key selector function and comparer and selects the resulting elements by using a specified function.
     let groupByCapacityCompareElement
-                ( keySelector     : Func<'Source,'Key>     )
-                ( elementSelector : Func<'Source,'Element> ) 
+                ( keySelector      )
+                ( elementSelector  ) 
                 ( capacity        : int                      )
                 ( comparer        : IEqualityComparer<'Key> ) 
                 ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
-        Observable.GroupBy( source, keySelector, elementSelector, capacity, comparer )
+        Observable.GroupBy( source, Func<'Source,'Key>    keySelector, Func<'Source,'Element> elementSelector, capacity, comparer )
 
 
 
