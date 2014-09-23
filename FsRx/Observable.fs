@@ -173,19 +173,21 @@ module Reactive =
         Observable.For( source, Func<'Source, IObservable<'Result>> map )
 
 
-//--------------------------------------------------------------------------------------------
-//  UNSURE HOW TO CHANGE INTO IDIOMATIC F# Versions
-//  
-//    /// Produces an enumerable sequence of consecutive (possibly empty) chunks of the source sequence.
-//    let collect source newCollector merge = 
-//        Observable.Collect( source, Func<_> newCollector,Func<_,_,_> merge )
-//
-//
-//    /// Produces an enumerable sequence that returns elements 
-//    /// collected/aggregated from the source sequence between consecutive iterations.
-//    let collect' getInitialCollector merge getNewCollector source =
-//        Observable.Collect( source           , Func<_> getInitialCollector  , 
-//                            Func<_,_,_> merge, Func<_,_> getNewCollector    )
+  
+    /// Produces an enumerable sequence that returns elements collected/aggregated from the source sequence between consecutive iterations.
+    /// merge - Merges a sequence element with the current collector
+    /// newCollector - Factory to create a new collector object.
+    let collectMerge source newCollector merge = 
+        Observable.Collect( source, Func<_> newCollector,Func<_,_,_> merge )
+
+
+    /// Produces an enumerable sequence that returns elements collected/aggregated from the source sequence between consecutive iterations.
+    /// merge - Merges a sequence element with the current collector
+    /// getNewCollector - Factory to replace the current collector by a new collector
+    /// getInitialCollector - Factory to create the initial collector object.
+    let collectMergeInit getInitialCollector merge getNewCollector source =
+        Observable.Collect( source           , Func<_> getInitialCollector  , 
+                            Func<_,_,_> merge, Func<_,_> getNewCollector    )
 //--------------------------------------------------------------------------------------------
 
     // #region CombineLatest Functions
@@ -286,7 +288,7 @@ module Reactive =
 
 
     /// Returns the elements of the specified sequence or the specified value in a singleton sequence if the sequence is empty.
-    let defaultIfEmptySeed (defaultValue:'Source )( source:IObservable<'Source> ) : IObservable<'Source> =
+    let defaultIfEmptyIs (defaultValue:'Source )( source:IObservable<'Source> ) : IObservable<'Source> =
         Observable.DefaultIfEmpty( source, defaultValue )
     
 
@@ -438,24 +440,16 @@ module Reactive =
 
     /// Applies an accumulator function over an observable sequence, returning the 
     /// result of the fold as a single element in the result sequence
-    /// seed is the initial accumulator value
-    let fold accumulator seed source =
-        Observable.Aggregate(source, seed, Func<_,_,_> accumulator)
+    /// init is the initial accumulator value
+    let fold accumulator init source =
+        Observable.Aggregate(source, init, Func<_,_,_> accumulator)
 
 
     /// Applies an accumulator function over an observable sequence, returning the 
     /// result of the fold as a single element in the result sequence
-    /// Seed is the initial accumulator value, map is performed after the fold
-    let foldMap accumulator seed map source =
-        Observable.Aggregate(source, seed,Func<_,_,_> accumulator,Func<_,_>  map )
-
-
-//
-//  UNSURE HOW TO WRAP IDIOMATICALLY
-//
-//    let forEach ( source:IObservable<'Source> )( onNext:Action<'Source> ) : unit =
-//        Observable.ForEachAsync( source, onNext )
-
+    /// init is the initial accumulator value, map is performed after the fold
+    let foldMap accumulator init map source =
+        Observable.Aggregate(source, init,Func<_,_,_> accumulator,Func<_,_>  map )
 
 
     /// Converts an Action-based .NET event to an observable sequence. Each event invocation is surfaced through an OnNext message in the resulting sequence.
@@ -477,6 +471,9 @@ module Reactive =
 //        Observable.FromEvent ( Func<Action<_>,_> conversion, Action<'Delegate> addHandler, Action<'Delegate> removeHandler )
 
 
+    /// Converts a .NET event to an observable sequence, using a conversion function to obtain the event delegate. 
+    /// Each event invocation is surfaced through an OnNext message in the resulting sequence.
+    /// For conversion of events conforming to the standard .NET event pattern, use any of the FromEventPattern functions instead.
     let fromEventConversion<'EventArgs, 'Delegate when 'EventArgs:> EventArgs>
             ( conversion   : ('EventArgs -> unit ) -> 'Delegate )
             ( addHandler   : ('Delegate  -> unit )              )
@@ -491,6 +488,8 @@ module Reactive =
         }
 
 
+    /// Converts a .NET event to an observable sequence, using a supplied event delegate type. 
+    /// Each event invocation is surfaced through an OnNext message in the resulting sequence.
     let fromEventHandler<'EventArgs when 'EventArgs:> EventArgs>
         ( addHandler    : EventHandler<_> -> unit )
         ( removeHandler : EventHandler<_> -> unit )  =
@@ -509,14 +508,7 @@ module Reactive =
         Observable.FromEventPattern( target, eventName )
 
 
-//    FromEvent : addHandler:Action<Action> * removeHandler:Action<Action> * scheduler:IScheduler -> IObservable<Unit>
-//    FromEvent : addHandler:Action<Action> * removeHandler:Action<Action> -> IObservable<Unit>
-//    FromEvent : addHandler:Action<Action<'EventArgs>> * removeHandler:Action<Action<'EventArgs>> -> IObservable<'EventArgs>
-//    FromEvent : addHandler:Action<'Delegate> * removeHandler:Action<'Delegate> * scheduler:IScheduler -> IObservable<'EventArgs>
-//    FromEvent : addHandler:Action<'Delegate> * removeHandler:Action<'Delegate> -> IObservable<'EventArgs>
-//    FromEvent : conversion:Func<Action<'EventArgs>,'Delegate> * addHandler:Action<'Delegate> * removeHandler:Action<'Delegate> * scheduler:IScheduler -> IObservable<'EventArgs>
-//    FromEvent : conversion:Func<Action<'EventArgs>,'Delegate> * addHandler:Action<'Delegate> * removeHandler:Action<'Delegate> -> IObservable<'EventArgs>
-//    FromEvent : addHandler:Action<Action<'EventArgs>> * removeHandler:Action<Action<'EventArgs>> * scheduler:IScheduler -> IObservable<'EventArgs>
+
 //    FromEventPattern : addHandler:Action<EventHandler> * removeHandler:Action<EventHandler> -> IObservable<EventPattern<EventArgs>>
 //    FromEventPattern : type:Type * eventName:string * scheduler:IScheduler -> IObservable<EventPattern<EventArgs>>
 //    FromEventPattern : addHandler:Action<EventHandler> * removeHandler:Action<EventHandler> * scheduler:IScheduler -> IObservable<EventPattern<EventArgs>>
@@ -555,31 +547,26 @@ module Reactive =
     /// Generates an observable sequence by running a state-driven loop producing the sequence's elements.
     let generate initialState condition iterator resultMap = 
         Observable.Generate(                            initialState, 
-                                Func<'TState,bool>      condition   , 
-                                Func<'TState,'TState>   iterator    , 
-                                Func<'TState,'Result>  resultMap   )
-
-
-//    let generate ( initialState:'TState )( condition )( iterator )( resultMap ) : IObservable<'Result> =
-//        Observable.Generate( initialState, Func<'TState,bool> condition, Func<'TState,'TState> iterator,  resultMap )
-//
+                                Func<'State,bool>      condition   , 
+                                Func<'State,'State>   iterator    , 
+                                Func<'State,'Result>  resultMap   )
 
 
     /// Generates an observable sequence by running a state-driven and temporal loop producing the sequence's elements.
-    let generateTimed ( initialState:'TState )( condition )( iterate )( resultMap )( genTime ) : IObservable<'Result> =
-        Observable.Generate( initialState, condition, iterate, Func<'TState,'Result>resultMap, Func<'TState,TimeSpan>genTime )
-//
-//
-//    let generate    ( initialState:'TState  )
-//                    ( condition             )
-//                    ( iterate               )
-//                    ( resultMap        )
-//                    ( timeSelector          ) : IObservable<'Result> =
-//        Observable.Generate(                                initialState    , 
-//                                Func<'TState,bool>          condition       , 
-//                                Func<'TState,'TState>       iterate         , 
-//                                Func<'TState,'Result>      resultMap       ,
-//                                Func<'TState,DateTimeOffset>timeSelector    )
+    let generateTimed( initialState:'State   )
+                     ( condition             )
+                     ( iterate               )
+                     ( resultMap             )
+                     ( timeSelector          ) : IObservable<'Result> =
+        Observable.Generate(                                initialState   , 
+                                Func<'State,bool>          condition       , 
+                                Func<'State,'State>       iterate          , 
+                                Func<'State,'Result>      resultMap        ,
+                                Func<'State,DateTimeOffset>timeSelector    )
+
+    /// Generates an observable sequence by running a state-driven and temporal loop producing the sequence's elements.
+    let generateTimeSpan ( initialState:'State )( condition )( iterate )( resultMap )( genTime ) : IObservable<'Result> =
+        Observable.Generate( initialState, condition, iterate, Func<'State,'Result>resultMap, Func<'State,TimeSpan>genTime )
 
 
     /// Returns an enumerator that enumerates all values of the observable sequence.
@@ -588,52 +575,83 @@ module Reactive =
 
 
     /// Groups the elements of an observable sequence according to a specified key selector function.
-    /// returns A sequence of observable groups, each of which corresponds to a unique key value,
-    /// containing all elements that share that same key value
-    let groupBy keySelector source = 
-        Observable.GroupBy( source, keySelector )
+    let groupBy ( keySelector  )
+                ( source      : IObservable<'Source>   ) :  IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupBy( source,Func<'Source,'Key>  keySelector )
 
-//
-//    let groupBy ( keySelector     : Func<'Source,'Key>     )
-//                ( elementSelector : Func<'Source,'Element> ) 
-//                ( capacity        : int                      )
-//                ( comparer        : IEqualityComparer<'Key> ) 
-//                ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupBy( source, keySelector, elementSelector, capacity, comparer )
-//
-//
-//    let groupBy ( keySelector     : Func<'Source,'Key>     )
-//                ( elementSelector : Func<'Source,'Element> ) 
-//                ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupBy( source, keySelector, elementSelector )
-//        
-//
-//    let groupBy ( keySelector  )
-//                ( comparer    : IEqualityComparer<_> )
-//                ( source      : IObservable<_>    ) : IObservable<IGroupedObservable<_,_>> =
-//        Observable.GroupBy( source, Func<_,_> keySelector, keySelector )
-//
-//
-//
-//    let groupBy ( keySelector : Func<'Source,'Key>    )
-//                ( source      : IObservable<'Source>   ) :  IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupBy( source, keySelector )
-//
-//
-//    let groupBy ( keySelector:Func<'Source,'Key> )( capacity:int )( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupBy( source, keySelector, capacity)
-//
-//
-//    let groupBy ( keySelector:Func<'Source,'Key> )( capacity:int )(comparer:IEqualityComparer<'Key> )( source:IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Source>> =
-//        Observable.GroupBy( source, keySelector, capacity, comparer )
-//
-//
-//    let groupBy ( keySelector:Func<'Source,'Key> )( elementSelector:Func<'Source,'Element> )( comparer:IEqualityComparer<'Key>) ( source:IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupBy( source, keySelector, elementSelector )
-//
-//
-//    let groupBy ( keySelector:Func<'Source,'Key> )( elementSelector:Func<'Source,'Element> )( capacity:int )( source:IObservable<'Source> ): IObservable<IGroupedObservable<'Key,'Element>> =
-//        Observable.GroupBy( source, keySelector, elementSelector )
+
+    /// Groups the elements of an observable sequence with the specified initial 
+    /// capacity according to a specified key selector function.
+    let groupByCapacity ( keySelector )
+                        ( capacity:int )
+                        ( source:IObservable<'Source> ) : IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupBy( source, Func<'Source,'Key> keySelector, capacity)
+
+
+    /// Groups the elements of an observable sequence according to a specified key selector function and comparer.
+    let groupByCompare ( keySelector  )
+                        ( comparer    : IEqualityComparer<_> )
+                        ( source      : IObservable<_>    ) : IObservable<IGroupedObservable<_,_>> =
+        Observable.GroupBy( source, Func<_,_> keySelector, keySelector )
+
+
+    /// Groups the elements of an observable sequence and selects the resulting elements by using a specified function.
+    let groupByElement  ( keySelector     : Func<'Source,'Key>     )
+                        ( elementSelector : Func<'Source,'Element> ) 
+                        ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupBy( source, keySelector, elementSelector )
+
+
+    /// Groups the elements of an observable sequence with the specified initial capacity 
+    /// according to a specified key selector function and comparer.
+    let groupByCapacityCompare
+                ( keySelector                           )
+                ( capacity  : int                       )
+                ( comparer  : IEqualityComparer<'Key>   )
+                ( source    : IObservable<'Source>      )    : IObservable<IGroupedObservable<'Key,'Source>> =
+        Observable.GroupBy( source, Func<'Source,'Key> keySelector, capacity, comparer )
+    
+
+    /// Groups the elements of an observable sequence with the specified initial capacity
+    /// and selects the resulting elements by using a specified function.
+    let groupByCapacityElement
+                ( keySelector    : Func<'Source,'Key>            )
+                ( elementSelector: Func<'Source,'Element>    )
+                ( capacity       : int                              )
+                ( source         : IObservable<'Source>               ): IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupBy( source, keySelector, elementSelector )
+
+
+    /// Groups the elements of an observable sequence according to a specified key selector function 
+    /// and comparer and selects the resulting elements by using a specified function.
+    let groupByCompareElement
+                ( keySelector    : Func<'Source,'Key>        )
+                ( elementSelector: Func<'Source,'Element> )
+                ( comparer       : IEqualityComparer<'Key>       )
+                ( source         : IObservable<'Source>           ): IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupBy( source, keySelector, elementSelector )
+
+
+
+    /// Groups the elements of an observable sequence with the specified initial capacity according to a 
+    /// specified key selector function and comparer and selects the resulting elements by using a specified function.
+    let groupByCapacityCompareElement
+                ( keySelector     : Func<'Source,'Key>     )
+                ( elementSelector : Func<'Source,'Element> ) 
+                ( capacity        : int                      )
+                ( comparer        : IEqualityComparer<'Key> ) 
+                ( source          : IObservable<'Source>    ) : IObservable<IGroupedObservable<'Key,'Element>> =
+        Observable.GroupBy( source, keySelector, elementSelector, capacity, comparer )
+
+
+
+        
+
+
+
+
+
+
 
 
     let groupByUntil    ( keySelector     : Func<'Source,'Key> )
@@ -704,7 +722,8 @@ module Reactive =
 
     /// Correlates the elements of two sequences based on overlapping 
     /// durations and groups the results
-    let groupJoin   ( left:IObservable<'Left>) (right:IObservable<'Right> )  
+    let groupJoin   ( left        : IObservable<'Left>       ) 
+                    ( right       : IObservable<'Right>      )  
                     ( leftselect  : 'Left -> IObservable<'a> ) 
                     ( rightselect : 'Right-> IObservable<'b> ) 
                     ( resultselect: 'Left -> IObservable<'Right>->'Result )  = 
@@ -1124,14 +1143,14 @@ module Reactive =
        Observable.Return(value)
 
 
-//    let result x : IObservable<_>=
-//        { new IObservable<_> with
-//            member this.Subscribe(observer:IObserver<_>) =
-//                observer.OnNext x
-//                observer.OnCompleted()
-//                { new IDisposable with member this.Dispose() = () }
-//        }
-//
+    let result x : IObservable<_>=
+        { new IObservable<_> with
+            member this.Subscribe(observer:IObserver<_>) =
+                observer.OnNext x
+                observer.OnCompleted()
+                { new IDisposable with member this.Dispose() = () }
+        }
+
 
 
         
@@ -1139,21 +1158,25 @@ module Reactive =
     let sample (interval: TimeSpan) source =
         Observable.Sample(source, interval)
 
-//        
-//    static member Sample : source:IObservable<'Source> * interval:TimeSpan -> IObservable<'Source>
-//    static member Sample : source:IObservable<'Source> * sampler:IObservable<'Sample> -> IObservable<'Source>
+
+    /// Samples the source observable sequence using a samper observable sequence producing sampling ticks.
+    /// Upon each sampling tick, the latest element (if any) in the source sequence during the 
+    /// last sampling interval is sent to the resulting sequence.
+    let sampleWith   (sampler:IObservable<'Sample>) (source:IObservable<'Source>) : IObservable<'Source> =
+        Observable.Sample( source, sampler )
 
 
 
-    /// Applies an accumulator function over an observable sequence
-    /// and returns each intermediate result. The specified seed value 
-    /// is used as the initial accumulator value. For aggreagation behavior
-    /// without intermediate results use 'aggregate'
-    let scan (collector:'a->'b->'a) state source =
-        Observable.Scan(source,  state, Func<'a,'b,'a>collector )
+    /// Applies an accumulator function over an observable sequence and returns each intermediate result.
+    let scan (accumulator:'a->'a->'a)  source =
+        Observable.Scan(source, Func<'a,'a,'a> accumulator  )
 
-//    static member Scan : source:IObservable<'Source> * accumulator:Func<'Source,'Source,'Source> -> IObservable<'Source>
-//    static member Scan : source:IObservable<'Source> * seed:'TAccumulate * accumulator:Func<'TAccumulate,'Source,'TAccumulate> -> IObservable<'TAccumulate>
+
+    /// Applies an accumulator function over an observable sequence and returns each intermediate result. 
+    /// The specified init value is used as the initial accumulator value.
+    let scanInit  (source:IObservable<'Source>) (init:'TAccumulate) (accumulator) : IObservable<'TAccumulate> =
+        Observable.Scan( source, init, Func<'TAccumulate,'Source,'TAccumulate> accumulator )
+
 
     let selectMany selector source = 
         Observable.SelectMany(source,Func<'Source,int,seq<'Result>> selector )
@@ -1299,19 +1322,14 @@ module Reactive =
         Observable.SkipWhile ( source, Func<'Source,int,bool> predicate)
 
 
-//    let startWith  param  source = 
-//        Observable.StartWith( source, param )
+    /// Prepends an array of values to an observable sequence.   
+    let startWith  (values:'T [])  (source: IObservable<'T>) : IObservable<'T> = 
+        Observable.StartWith( source, values )
 
 
-      /// Prepends a sequence of values to an observable sequence.   
-//    static member StartWith : source:IObservable<'Source> * values:Collections.Generic.IEnumerable<'Source> -> IObservable<'Source>
-//    static member StartWith : source:IObservable<'Source> * values:Collections.Generic.IEnumerable<'Source> -> IObservable<'Source>
-
-
-
-      /// Prepends a sequence of values to an observable sequence.   
-//    static member StartWith : source:IObservable<'Source> * values:'Source [] -> IObservable<'Source>
-//    static member StartWith : source:IObservable<'Source> * values:'Source [] -> IObservable<'Source>
+    /// Prepends a sequence of values to an observable sequence.   
+    let startWithSeq (source:IObservable<'Source>) (values:seq<'Source>) : IObservable<'Source> =
+        Observable.StartWith(source, values )
 
 
     /// Subscribes to the Observable with a next fuction.
@@ -1374,25 +1392,21 @@ module Reactive =
     let synchronizeGate (gate:obj)  (source:IObservable<'Source>): IObservable<'Source> =
         Observable.Synchronize( source, gate )
 
+
     /// Takes n elements (from the beginning of an observable sequence? )
     let take (n: int) source : IObservable<'Source> = 
         Observable.Take(source, n)    
+
 
     /// Returns a specified number of contiguous elements from the end of an obserable sequence
     let takeLast ( count:int ) source = 
         Observable.TakeLast(source, count)
 
-    let takeLast2 ( count:int ) ( scheduler:Concurrency.IScheduler) (source:IObservable<'Source>) =
-        Observable.TakeLast( source, count, scheduler )
 
-    let takeLast3 ( duration:TimeSpan ) ( source:IObservable<'Source> ): IObservable<'Source> =
+    /// Returns elements within the specified duration from the end of the observable source sequence.
+    let takeLastSpan ( duration:TimeSpan ) ( source:IObservable<'Source> ): IObservable<'Source> =
         Observable.TakeLast( source, duration )
 
-    let takeLast4 ( duration:TimeSpan ) ( scheduler: Concurrency.IScheduler) (source:IObservable<'Source>) =
-        Observable.TakeLast( source, duration, scheduler )
-
-    let takeLast5 ( duration:TimeSpan ) ( timerscheduler: Concurrency.IScheduler ) ( loopscheduler: Concurrency.IScheduler ) (source:IObservable<'Source>) =
-        Observable.TakeLast( source, duration, timerscheduler, loopscheduler )
 
     /// Returns a list with the elements within the specified duration from the end of the observable source sequence.
     let takeLastBuffer ( duration:TimeSpan )( source:IObservable<'Source> ): IObservable<Collections.Generic.IList<'Source>> =
