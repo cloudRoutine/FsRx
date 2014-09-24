@@ -1,4 +1,5 @@
 FsRx
 ====
 
-F# wrappers for the Reactive Extensions Library
+merged into https://github.com/fsprojects/FSharp.Reactive
+
