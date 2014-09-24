@@ -1,5 +1,5 @@
 FsRx
 ====
 
-merged into https://github.com/fsprojects/FSharp.Reactive
+merged into https://github.com/fsprojects/FSharp.Control.Reactive
 
